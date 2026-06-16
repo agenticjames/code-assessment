@@ -1,9 +1,9 @@
 """Grade one investigation against a scenario's ``HIDDEN_TRUTH.md``.
 
-The answer key's YAML front-matter is read **after** the run (never fed to the agent). Inc 0
-checks the three things a walking skeleton can be judged on: did it name the right cause, are
-confidences in the expected ranges, and how many of the required citation *paths* did it cite.
-Herring-rejection is graded from Inc 1; the full Inc-2 citation verifier re-opens each source.
+The answer key's YAML front-matter is read **after** the run (never fed to the agent). Inc 1 raises
+the bar from "named the cause" to "named the cause **and** explicitly ruled out the herring": the
+herring service must appear with ``status == ruled_out``, not merely be absent. The full Inc-2
+citation verifier (re-opening each cited source) is still to come.
 """
 
 from __future__ import annotations
@@ -31,6 +31,9 @@ class Scorecard:
     named_service: str | None
     named_is_top: bool
     named_correct: bool
+    herring_service: str = ""
+    herring_status: str | None = None
+    herring_ruled_out: bool = False
     confidence_checks: list[tuple[str, str, float | None, bool]] = field(
         default_factory=list
     )
@@ -40,8 +43,10 @@ class Scorecard:
 
     @property
     def passed(self) -> bool:
-        # Inc 0 bar: named the right cause. (Herring-rejection + full grounding come later.)
-        return self.named_correct
+        # Inc 1 bar: named the right cause AND explicitly ruled out the herring (if one exists).
+        return self.named_correct and (
+            not self.herring_service or self.herring_ruled_out
+        )
 
 
 def _front_matter(path: Path) -> dict:
@@ -64,6 +69,7 @@ def _check_range(actual: float | None, spec: str) -> bool:
 def grade(ledger: Ledger, hidden_truth_path: Path | str) -> Scorecard:
     key = _front_matter(Path(hidden_truth_path))
     rc_service = str((key.get("root_cause") or {}).get("service", ""))
+    herring_service = str((key.get("herring") or {}).get("service", ""))
 
     hyps = (
         sorted(ledger.result.hypotheses, key=lambda h: -h.confidence)
@@ -75,6 +81,14 @@ def grade(ledger: Ledger, hidden_truth_path: Path | str) -> Scorecard:
     named = next(
         (h for h in hyps if (h.service or "").lower() == rc_service.lower()), None
     )
+    herring = (
+        next(
+            (h for h in hyps if (h.service or "").lower() == herring_service.lower()),
+            None,
+        )
+        if herring_service
+        else None
+    )
 
     card = Scorecard(
         scenario=str(key.get("scenario", "?")),
@@ -82,6 +96,9 @@ def grade(ledger: Ledger, hidden_truth_path: Path | str) -> Scorecard:
         named_service=top.service if top else None,
         named_is_top=bool(top and (top.service or "").lower() == rc_service.lower()),
         named_correct=named is not None,
+        herring_service=herring_service,
+        herring_status=herring.status if herring else None,
+        herring_ruled_out=bool(herring and herring.status == "ruled_out"),
     )
     for svc, spec in (key.get("expected_confidence") or {}).items():
         actual = by_service.get(svc.lower())
@@ -110,6 +127,12 @@ def scorecard_panel(card: Scorecard) -> Panel:
     t.add_row("expected cause", escape(card.root_cause_service))
     named = f"{escape(card.named_service or '-')}  {mark(card.named_correct)}"
     t.add_row("named cause", named + ("  [dim](top)[/]" if card.named_is_top else ""))
+    if card.herring_service:
+        hs = card.herring_status or "absent"
+        t.add_row(
+            "herring ruled out",
+            f"{escape(card.herring_service)} ({escape(hs)})  {mark(card.herring_ruled_out)}",
+        )
     for svc, spec, actual, ok in card.confidence_checks:
         av = "-" if actual is None else f"{actual:.2f}"
         t.add_row(f"conf {escape(svc)}", f"{av} vs {escape(spec)}  {mark(ok)}")
@@ -121,7 +144,7 @@ def scorecard_panel(card: Scorecard) -> Panel:
     return Panel(
         t,
         title="[bold]Scorecard vs HIDDEN_TRUTH[/]",
-        subtitle="[dim]Inc 0: named-cause is the bar; herring-rejection from Inc 1[/]",
+        subtitle="[dim]Inc 1: named cause + herring ruled out; full citation verifier is Inc 2[/]",
         border_style="green" if card.passed else "yellow",
         expand=False,
     )

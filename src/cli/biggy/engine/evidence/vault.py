@@ -307,3 +307,98 @@ class Vault:
         if not hits:
             return f"No matches for {keyword!r} in the incident window."
         return f"{len(hits)} match(es) for {keyword!r}:\n" + "\n".join(hits)
+
+    # ---------- structured accessors (the get_* tools) ----------
+    def get_topology(self, service: str) -> str:
+        """A service's upstream deps + derived dependents + store specifics. Standing (no window)."""
+        rel = "topology/services.yaml"
+        topo = yaml.safe_load((self.root / rel).read_text(encoding="utf-8")) or {}
+        svc = service.strip()
+        if svc not in topo:
+            ci = [k for k in topo if k.lower() == svc.lower()]
+            if not ci:
+                return f"ERROR: unknown service {service!r}. Known: {', '.join(sorted(topo))}."
+            svc = ci[0]
+        entry = topo[svc] or {}
+        deps = entry.get("depends_on") or []
+        dependents = sorted(
+            k for k, v in topo.items() if svc in ((v or {}).get("depends_on") or [])
+        )
+        line = next(
+            (
+                i
+                for i, t in enumerate(
+                    (self.root / rel).read_text(encoding="utf-8").splitlines(), 1
+                )
+                if t.startswith(f"{svc}:")
+            ),
+            None,
+        )
+        src = f"{rel}:{line}" if line else rel
+        out = [
+            f"# {svc}  ({src})",
+            f"tier: {entry.get('tier', '?')}  owner: {entry.get('owner', '?')}",
+        ]
+        if entry.get("slo"):
+            out.append(f"slo: {entry['slo']}")
+        out.append(f"depends_on (upstream): {deps or '[]'}")
+        out.append(f"dependents (downstream, derived): {dependents or '[]'}")
+        for k in ("type", "max_connections", "shared_by", "config", "external"):
+            if k in entry:
+                out.append(f"{k}: {entry[k]}")
+        desc = (entry.get("description") or "").strip()
+        if desc:
+            out.append(f"description: {desc}")
+        return "\n".join(out)
+
+    def get_changes(self, service: str | None = None) -> str:
+        """Deploys / config changes / migrations in the incident window, each source-anchored."""
+        rel = "telemetry/deploys.yaml"
+        lines = (
+            (self.root / rel).read_text(encoding="utf-8", errors="replace").splitlines()
+        )
+        out = []
+        for ln, txt in self._window_lines("deploys", lines, self.scenario.window):
+            s = txt.strip()
+            if not s.startswith("- {"):  # skip the 'changes:' header, comments, blanks
+                continue
+            if service and f"service: {service}" not in txt:
+                continue
+            out.append(f"{rel}:{ln}: {s}")
+        if not out:
+            scope = f" for service {service!r}" if service else ""
+            return f"No changes{scope} in the incident window ({self._wlabel()})."
+        head = f"# changes in {self._wlabel()}" + (
+            f" (service={service})" if service else ""
+        )
+        return head + "\n" + "\n".join(out)
+
+    def get_metric(self, name: str) -> str:
+        """A metric time-series in the incident window + a summary (peak / min / max), source-anchored."""
+        stem = name.strip().removesuffix(".csv")
+        rel = f"telemetry/metrics/{stem}.csv"
+        full = self.root / rel
+        if not full.is_file():
+            avail = sorted(
+                p.stem for p in (self.root / "telemetry/metrics").glob("*.csv")
+            )
+            return f"ERROR: unknown metric {name!r}. Available: {', '.join(avail)}."
+        lines = full.read_text(encoding="utf-8", errors="replace").splitlines()
+        rows = []
+        for ln, txt in self._window_lines("csv", lines, self.scenario.window):
+            ts, _, val = txt.partition(",")
+            try:
+                rows.append((ln, ts.strip(), float(val)))
+            except ValueError:
+                continue  # header / malformed
+        if not rows:
+            return f"# {rel}\n(no data points in the incident window {self._wlabel()})"
+        vals = [v for _, _, v in rows]
+        peak_ln, peak_ts, peak_v = max(rows, key=lambda r: r[2])
+        summary = (
+            f"# {rel}  (window {self._wlabel()}; {len(rows)} points)\n"
+            f"first={rows[0][2]:g} last={rows[-1][2]:g} min={min(vals):g} max={max(vals):g} "
+            f"peak={peak_v:g} @ {peak_ts} ({rel}:{peak_ln})"
+        )
+        body = "\n".join(f"{rel}:{ln}: {ts},{v:g}" for ln, ts, v in rows)
+        return f"{summary}\n{body}"

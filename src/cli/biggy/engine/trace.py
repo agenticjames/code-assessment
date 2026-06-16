@@ -39,3 +39,15 @@ class Tracer:
             _console.print(
                 f"[yellow]  step budget ({n}) exhausted — emitting best-effort verdict[/]"
             )
+
+    def phase(self, name: str) -> None:
+        if self.enabled:
+            _console.print(f"[bold cyan]>> {name}[/]")
+
+    def hypotheses(self, hyps) -> None:
+        if not self.enabled:
+            return
+        for h in hyps:
+            _console.print(
+                f"[dim]  {h.id}[/] {h.statement} [dim](prior {h.confidence:.2f})[/]"
+            )

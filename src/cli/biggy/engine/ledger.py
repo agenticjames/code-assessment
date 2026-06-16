@@ -1,8 +1,7 @@
-"""The Investigation Ledger — the engine's evolving, serialisable state.
+"""The Investigation Ledger — the engine's evolving, serialisable state (the blackboard).
 
-Inc 0 records the tool calls (the visible reasoning trail) and the final verdict, and
-serialises to ``ledger.json``. Inc 1 grows this into the multi-hypothesis / evidence /
-timeline object from DESIGN §4.4.
+It records the initial hypothesis set (post-hypothesize), the tool calls made while testing, and
+the adjudicated verdict — so ``ledger.json`` shows the hypotheses evolving open -> confirmed/ruled_out.
 """
 
 from __future__ import annotations
@@ -12,7 +11,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from biggy.engine.schemas import InvestigationResult
+from biggy.engine.schemas import Hypothesis, InvestigationResult
 
 
 class ToolCall(BaseModel):
@@ -29,8 +28,13 @@ class Ledger(BaseModel):
     query: str
     as_of: str | None = None
     window: list[str] = Field(default_factory=list)
+    initial_hypotheses: list[Hypothesis] = Field(default_factory=list)
     tool_calls: list[ToolCall] = Field(default_factory=list)
     result: InvestigationResult | None = None
+
+    def record_hypotheses(self, hypotheses: list[Hypothesis]) -> None:
+        """Snapshot the candidate set right after the hypothesize phase."""
+        self.initial_hypotheses = hypotheses
 
     def record_tool(self, step: int, name: str, args: dict, result: str) -> None:
         preview = result if len(result) <= 280 else result[:277] + "..."
@@ -39,10 +43,14 @@ class Ledger(BaseModel):
         )
 
     def citations(self) -> list[str]:
-        """Every citation source in the verdict's evidence (used by the grader)."""
+        """Every citation source in the verdict's evidence (supporting + contradicting)."""
         if not self.result:
             return []
-        return [e.source for h in self.result.hypotheses for e in h.evidence]
+        return [
+            e.source
+            for h in self.result.hypotheses
+            for e in (h.supporting + h.contradicting)
+        ]
 
     def to_json(self, path: Path | str) -> Path:
         path = Path(path)

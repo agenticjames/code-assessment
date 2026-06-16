@@ -16,9 +16,16 @@ from rich.text import Text
 
 from biggy.engine.config import RunConfig
 from biggy.engine.ledger import Ledger
-from biggy.engine.schemas import InvestigationResult
+from biggy.engine.schemas import EvidenceRef, Hypothesis, InvestigationResult
 
 console = Console()
+
+_STATUS = {
+    "confirmed": "[green]confirmed[/]",
+    "ruled_out": "[red]ruled out[/]",
+    "open": "[yellow]open[/]",
+}
+_BORDER = {"confirmed": "green", "ruled_out": "red", "open": "white"}
 
 
 def render(result: InvestigationResult, ledger: Ledger, config: RunConfig) -> Path:
@@ -36,6 +43,33 @@ def _conf_bar(c: float) -> str:
     return f"{c:.2f}  [{'#' * round(c * 10):<10}]"
 
 
+def _evidence(refs: list[EvidenceRef]) -> str:
+    return "\n".join(
+        f'- {escape(e.claim)}\n  [dim]{escape(e.source)}[/] "{escape(e.snippet)}"'
+        for e in refs
+    )
+
+
+def _hypothesis_panel(h: Hypothesis, rank: int) -> Panel:
+    t = Table(show_header=False, box=None, pad_edge=False)
+    t.add_column(style="cyan", no_wrap=True)
+    t.add_column()
+    t.add_row("service", escape(h.service or "-"))
+    t.add_row("status", _STATUS.get(h.status, escape(h.status)))
+    t.add_row("confidence", _conf_bar(h.confidence))
+    t.add_row("statement", escape(h.statement))
+    if h.status == "ruled_out" and h.ruled_out_reason:
+        t.add_row("ruled out", escape(h.ruled_out_reason))
+    if h.supporting:
+        t.add_row("supporting", _evidence(h.supporting))
+    if h.contradicting:
+        t.add_row("contradicting", _evidence(h.contradicting))
+    title = f"[bold]Hypothesis {rank}" + (f" - {escape(h.id)}" if h.id else "") + "[/]"
+    return Panel(
+        t, title=title, border_style=_BORDER.get(h.status, "white"), expand=False
+    )
+
+
 def _briefing(result: InvestigationResult, ledger: Ledger) -> Group:
     parts: list = [
         Panel(
@@ -47,24 +81,13 @@ def _briefing(result: InvestigationResult, ledger: Ledger) -> Group:
         )
     ]
     ranked = sorted(result.hypotheses, key=lambda h: -h.confidence)
-    for i, h in enumerate(ranked, 1):
-        t = Table(show_header=False, box=None, pad_edge=False)
-        t.add_column(style="cyan", no_wrap=True)
-        t.add_column()
-        t.add_row("service", escape(h.service or "-"))
-        t.add_row("confidence", _conf_bar(h.confidence))
-        t.add_row("statement", escape(h.statement))
-        if h.evidence:
-            ev = "\n".join(
-                f'- {escape(e.claim)}\n  [dim]{escape(e.source)}[/] "{escape(e.snippet)}"'
-                for e in h.evidence
-            )
-            t.add_row("evidence", ev)
+    parts += [_hypothesis_panel(h, i) for i, h in enumerate(ranked, 1)]
+    if result.open_questions:
         parts.append(
             Panel(
-                t,
-                title=f"[bold]Hypothesis {i}[/]",
-                border_style="green" if i == 1 else "white",
+                "\n".join(f"- {escape(q)}" for q in result.open_questions),
+                title="[bold]Open questions[/]",
+                border_style="magenta",
                 expand=False,
             )
         )

@@ -1,4 +1,5 @@
-"""End-to-end thread with a REAL Gemini call: query -> tools over evidence -> cited verdict.
+"""The abductive loop end-to-end with a REAL Gemini call: it must confirm the rate-limiter AND
+explicitly rule out the orders-db herring.
 
 Skipped automatically when no API key is present (see the ``needs_llm`` fixture)."""
 
@@ -8,37 +9,33 @@ from biggy.engine.ledger import Ledger
 from biggy.engine.orchestrator import investigate
 from biggy.engine.trace import Tracer
 
-_CITE_PREFIXES = (
-    "telemetry/",
-    "topology/",
-    "runbooks/",
-    "adr/",
-    "monitors/",
-    "slos.yaml",
-    "teams.yaml",
-)
 
-
-def test_live_run_yields_cited_hypothesis(config_a, needs_llm, tmp_path):
+def test_live_abductive_rules_out_herring(config_a, needs_llm, tmp_path):
     result, ledger = investigate(config_a, tracer=Tracer(enabled=False))
 
-    assert result.hypotheses
+    # multi-hypothesis: it considered more than one candidate
+    assert len(result.hypotheses) >= 2
+
+    # the rate-limiter is the confirmed, top hypothesis
     top = max(result.hypotheses, key=lambda h: h.confidence)
-    # the culprit (rate-limiter) should be named, in the service field or the statement
-    assert "rate-limiter" in f"{top.service or ''} {top.statement}".lower()
+    assert (top.service or "").lower() == "rate-limiter"
+    assert top.status == "confirmed"
 
-    sources = [e.source for h in result.hypotheses for e in h.evidence]
-    assert sources, "every claim should be cited"
-    assert any(s.startswith("telemetry/") for s in sources), (
-        "should cite live telemetry"
+    # the orders-db migration herring is present AND explicitly ruled out, with a reason
+    herring = next(
+        (h for h in result.hypotheses if (h.service or "").lower() == "orders-db"), None
     )
-    assert all(s.startswith(_CITE_PREFIXES) for s in sources), (
-        "citations must be real workspace paths"
+    assert herring is not None, (
+        "the agent should have considered the orders-db migration"
     )
-    assert ledger.tool_calls, "the agent should have used the tools"
+    assert herring.status == "ruled_out"
+    assert herring.ruled_out_reason
 
-    # the ledger artifact round-trips
-    path = ledger.to_json(tmp_path / "ledger.json")
-    reloaded = Ledger.load(path)
-    assert reloaded.result is not None
-    assert reloaded.query == config_a.query
+    # claims are cited from real telemetry; the ledger evolved and round-trips
+    sources = [
+        e.source for h in result.hypotheses for e in (h.supporting + h.contradicting)
+    ]
+    assert any(s.startswith("telemetry/") for s in sources)
+    assert ledger.initial_hypotheses and ledger.tool_calls
+    reloaded = Ledger.load(ledger.to_json(tmp_path / "ledger.json"))
+    assert reloaded.result is not None and reloaded.query == config_a.query
