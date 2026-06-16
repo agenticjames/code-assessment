@@ -1,0 +1,12 @@
+# dep-5b71 — search v2.9 query-parser refactor @ 2026-06-16T08:15:00Z (author: theo, team-growth)
+# File: search/handler.go  (the regression: a null/empty guard was dropped)
+--- a/search/handler.go
++++ b/search/handler.go
+@@ -41,9 +41,7 @@ func (h *SearchHandler) parseQuery(r *Request) (*Query, error) {
+   raw := r.Params.Get("query")
+-  if raw == "" {
+-    return emptyResults(), nil          // empty query -> return no results, don't parse
+-  }
+   tokens := tokenize(raw)               // panics with NPE when raw is empty/nil
+   return &Query{Tokens: tokens}, nil
+ }

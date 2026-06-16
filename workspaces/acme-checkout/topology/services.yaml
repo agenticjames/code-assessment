@@ -1,0 +1,151 @@
+# Acme Checkout — service dependency graph (the lightweight knowledge graph).
+# Traversed by the agent via get_topology(service).
+#   "A depends_on B"  = A calls B on its request path (so B is UPSTREAM of A).
+#   dependents are derived by inversion at load time.
+# Tiers: edge -> core -> platform -> data -> external.
+
+api-gateway:
+  tier: edge
+  owner: team-platform
+  slo: gateway-availability
+  depends_on: [checkout, cart, search, recommendations, user-profile, orders, notifications]
+  description: Public entry point; routes customer traffic to core services. Emits 504 when an upstream times out.
+
+cdn:
+  tier: edge
+  owner: team-platform
+  depends_on: []
+  description: Static asset edge cache.
+
+checkout:
+  tier: core
+  owner: team-payments
+  slo: checkout-latency
+  depends_on: [rate-limiter, auth-service, redis, orders-db, payment-gateway, inventory]
+  description: Places orders; the revenue-critical path. Acquires a redis connection per request.
+
+cart:
+  tier: core
+  owner: team-growth
+  depends_on: [auth-service, redis, sessions-store]
+  description: Shopping cart; reads/writes cart state in the shared redis.
+
+orders:
+  tier: core
+  owner: team-data
+  depends_on: [auth-service, orders-db, kafka]
+  description: Order lifecycle and history.
+
+search:
+  tier: core
+  owner: team-growth
+  depends_on: [auth-service, search-index]
+  description: Product search.
+
+recommendations:
+  tier: core
+  owner: team-growth
+  depends_on: [auth-service, search-index, kafka]
+  description: Personalized product recommendations.
+
+user-profile:
+  tier: core
+  owner: team-identity
+  depends_on: [auth-service, sessions-store, orders-db]
+  description: Customer profile and preferences.
+
+notifications:
+  tier: core
+  owner: team-growth
+  depends_on: [auth-service, kafka, email-provider]
+  description: Transactional email / push notifications.
+
+inventory:
+  tier: core
+  owner: team-data
+  depends_on: [orders-db, kafka]
+  description: Stock levels and reservations.
+
+rate-limiter:
+  tier: platform
+  owner: team-platform
+  config: rate-limiter.config.yaml     # current config; per-incident overlays live in scenarios/*/changes/
+  depends_on: [redis]
+  description: >
+    Token-bucket request throttling for checkout and cart. Stores buckets in the SHARED
+    redis. max_tokens sets bucket size. See runbooks/rate-limiter-operations.md.
+
+auth-service:
+  tier: platform
+  owner: team-identity
+  slo: auth-availability
+  depends_on: [sessions-store]
+  description: >
+    Token validation / session auth on the request path of nearly every core service.
+    HIGH FAN-IN: a degradation here cascades to all dependents (see dependents at load time).
+
+feature-flags:
+  tier: platform
+  owner: team-platform
+  depends_on: [redis]
+  description: Runtime feature-flag evaluation.
+
+redis:
+  tier: data
+  type: cache
+  owner: team-platform
+  max_connections: 50                          # HARD cap. See runbooks/redis-connection-pool.md.
+  shared_by: [rate-limiter, checkout, cart]     # ONE pool of 50 shared across these three (ADR-014).
+  description: >
+    Shared in-memory cache + rate-limiter token store. The single 50-connection pool is
+    shared by rate-limiter, checkout, and cart — noisy-neighbor risk. See adr/ADR-014-shared-redis.md.
+
+orders-db:
+  tier: data
+  type: postgres
+  owner: team-data
+  max_connections: 100
+  depends_on: []
+  description: Primary transactional store (orders, inventory, profiles). Separate from redis.
+
+sessions-store:
+  tier: data
+  type: dynamodb
+  owner: team-identity
+  depends_on: []
+  description: Session/token store backing auth-service. NOT the shared redis.
+
+search-index:
+  tier: data
+  type: elasticsearch
+  owner: team-growth
+  depends_on: []
+  description: Product search index.
+
+kafka:
+  tier: data
+  type: event-bus
+  owner: team-data
+  depends_on: []
+  description: Async event backbone (orders, inventory, notifications, recommendations).
+
+payment-gateway:
+  tier: external
+  external: true
+  owner: team-payments
+  depends_on: []
+  description: Third-party card processor. Outside our control; can be intermittently flaky.
+
+shipping-api:
+  tier: external
+  external: true
+  owner: team-fulfillment
+  depends_on: []
+  description: Third-party shipping rate/label provider.
+
+email-provider:
+  tier: external
+  external: true
+  owner: team-growth
+  depends_on: []
+  description: Third-party transactional email.

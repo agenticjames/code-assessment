@@ -1,0 +1,10 @@
+id: E
+slug: deploy-regression
+workspace: acme-checkout
+query: "error rate spiked right after this morning's deploy"
+mode: live
+as_of: 2026-06-16T08:39:00Z      # after onset (08:16), 1 min BEFORE the rollback (08:40): the agent must
+                                 # decisively name dep-5b71 and RECOMMEND the rollback, not read that it happened.
+look_back: 1h
+severity: SEV2
+evidence: telemetry/

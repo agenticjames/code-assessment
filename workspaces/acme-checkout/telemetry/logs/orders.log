@@ -1,0 +1,63 @@
+ts=2026-06-08T05:11:02Z level=INFO  svc=orders msg="service healthy" build=v3.17.0 commit=9a01ce component=heartbeat
+ts=2026-06-08T14:33:41Z level=INFO  svc=orders msg="GET /orders" req_id=or-1101 customer_id=cus-3301 result=ok duration_ms=49
+ts=2026-06-09T07:22:18Z level=INFO  svc=orders msg="GET /orders/{id}" req_id=or-1240 order_id=ord-50012 result=ok duration_ms=38
+ts=2026-06-09T11:20:33Z level=INFO  svc=orders msg="rolling update: serving orders v3.18 (dep-2b40)" component=deploy note="pagination fix; order-placement path unchanged"
+ts=2026-06-09T18:45:55Z level=INFO  svc=orders msg="POST /orders" req_id=or-1388 order_id=ord-50140 result=ok duration_ms=142
+ts=2026-06-10T09:18:09Z level=INFO  svc=orders msg="GET /orders" req_id=or-2201 customer_id=cus-4410 result=ok duration_ms=51
+ts=2026-06-10T21:09:03Z level=INFO  svc=orders msg="POST /orders" req_id=or-8803 order_id=ord-71206 result=ok duration_ms=58
+ts=2026-06-10T21:10:38Z level=INFO  svc=orders msg="orders-db query ok" req_id=or-8805 stmt="INSERT INTO orders" duration_ms=12 component=db-client
+ts=2026-06-10T21:11:25Z level=WARN  svc=orders msg="auth validate slow" req_id=or-8807 upstream=auth-service duration_ms=2280
+ts=2026-06-10T21:12:01Z level=ERROR svc=orders msg="auth check timed out" req_id=or-8808 upstream=auth-service timeout_ms=2000 op=POST_/orders
+ts=2026-06-10T21:12:02Z level=ERROR svc=orders msg="request aborted: token validation failed" req_id=or-8808 status=401_unauthorized duration_ms=2011
+  at auth.client.validate(auth_client.go:71)
+  at orders.requireAuth(middleware.go:53)
+  at orders.handleCreate(handler.go:96)
+ts=2026-06-10T21:12:30Z level=DEBUG svc=orders msg="orders-db query ok" req_id=health-12 stmt="SELECT 1" duration_ms=3 component=db-client note="orders-db healthy; pool 14/100"
+ts=2026-06-10T21:12:31Z level=ERROR svc=orders msg="401 from auth-service" req_id=or-880a upstream=auth-service status=401 op=GET_/orders/history
+ts=2026-06-10T21:13:33Z level=INFO  svc=orders msg="kafka produce ok" req_id=or-880d topic=order-events partition=3 duration_ms=6 note="kafka healthy"
+ts=2026-06-10T21:14:52Z level=ERROR svc=orders msg="auth check timed out" req_id=or-8812 upstream=auth-service timeout_ms=2000 op=GET_/orders/history
+ts=2026-06-10T21:16:48Z level=ERROR svc=orders msg="401 from auth-service" req_id=or-8816 upstream=auth-service status=401 op=POST_/orders
+ts=2026-06-10T21:21:02Z level=ERROR svc=orders msg="auth check timed out" req_id=or-881c upstream=auth-service timeout_ms=2000 op=POST_/orders
+ts=2026-06-10T21:29:08Z level=WARN  svc=orders msg="auth validate recovering" req_id=or-8822 upstream=auth-service duration_ms=210 note="fewer timeouts"
+ts=2026-06-10T21:35:18Z level=INFO  svc=orders msg="5xx rate back to baseline" component=server note="cleared as auth-service recovered"
+ts=2026-06-11T10:42:09Z level=INFO  svc=orders msg="GET /orders" req_id=or-3301 customer_id=cus-2210 result=ok duration_ms=48
+ts=2026-06-12T08:55:41Z level=INFO  svc=orders msg="POST /orders" req_id=or-3902 order_id=ord-72010 result=ok duration_ms=139
+ts=2026-06-12T10:45:12Z level=INFO  svc=orders msg="GET /orders" req_id=or-4012 customer_id=cus-6620 result=ok duration_ms=52 note="brief connection blips during redis surge cleared"
+ts=2026-06-13T13:18:33Z level=INFO  svc=orders msg="GET /orders/{id}" req_id=or-4501 order_id=ord-72240 result=ok duration_ms=37
+ts=2026-06-14T09:30:55Z level=INFO  svc=orders msg="POST /orders" req_id=or-5102 order_id=ord-72510 result=ok duration_ms=144
+ts=2026-06-15T16:00:12Z level=INFO  svc=orders msg="service healthy" build=v3.18.0 commit=2b40f9 uptime_s=518400 component=bootstrap
+ts=2026-06-15T16:00:13Z level=INFO  svc=orders msg="runtime config" jvm.heap.max_mb=2048 gc.logging=disabled gc.collector=G1 metrics.export=on tracing.sample_rate=0.01 component=bootstrap
+ts=2026-06-15T16:01:44Z level=INFO  svc=orders msg="GET /orders/{id}" req_id=ord-3a01 order_id=ord-51220 result=ok duration_ms=38
+ts=2026-06-15T16:03:09Z level=INFO  svc=orders msg="POST /orders" req_id=ord-3a03 order_id=ord-51221 result=ok duration_ms=141
+ts=2026-06-15T16:04:07Z level=WARN  svc=orders msg="heap usage high" heap_used_mb=1169 heap_max_mb=2048 component=runtime
+ts=2026-06-15T16:04:08Z level=ERROR svc=orders msg="downstream call timed out after 3000ms" req_id=ord-3a04 endpoint="POST /orders" status=500 trace_id=- component=order-service
+ts=2026-06-15T16:04:08Z level=ERROR svc=orders msg="500 Internal Server Error" req_id=ord-3a04 endpoint="POST /orders" duration_ms=3004
+ts=2026-06-15T16:06:48Z level=INFO  svc=orders msg="GET /orders/{id}" req_id=ord-3a06 order_id=ord-51224 result=ok duration_ms=36
+ts=2026-06-15T16:09:11Z level=ERROR svc=orders msg="unhandled exception while building response" req_id=ord-3a08 endpoint="GET /orders/{id}" status=500 exc=NullPointerException trace_id=- duration_ms=61 component=order-service
+ts=2026-06-15T16:09:11Z level=ERROR svc=orders msg="500 Internal Server Error" req_id=ord-3a08 endpoint="GET /orders/{id}" duration_ms=61
+ts=2026-06-15T16:11:02Z level=WARN  svc=orders msg="heap usage high" heap_used_mb=1217 heap_max_mb=2048 component=runtime
+ts=2026-06-15T16:11:18Z level=ERROR svc=orders msg="downstream call timed out after 3000ms" req_id=ord-3a0a endpoint="POST /orders" status=500 trace_id=- component=order-service
+ts=2026-06-15T16:11:18Z level=ERROR svc=orders msg="500 Internal Server Error" req_id=ord-3a0a endpoint="POST /orders" duration_ms=3002
+ts=2026-06-15T16:14:27Z level=INFO  svc=orders msg="POST /orders" req_id=ord-3a0c order_id=ord-51229 result=ok duration_ms=152
+ts=2026-06-15T16:18:55Z level=INFO  svc=orders msg="GET /orders" req_id=ord-3a0e customer_id=cus-7765 result=ok duration_ms=51
+ts=2026-06-15T16:21:09Z level=INFO  svc=orders msg="GET /orders/{id}" req_id=ord-3a10 order_id=ord-51234 result=ok duration_ms=37
+ts=2026-06-15T16:23:14Z level=WARN  svc=orders msg="heap usage high" heap_used_mb=1377 heap_max_mb=2048 component=runtime note="heap ~81%"
+ts=2026-06-15T16:23:15Z level=ERROR svc=orders msg="unhandled exception while building response" req_id=ord-3a11 endpoint="GET /orders/{id}/timeline" status=500 exc=NullPointerException trace_id=- duration_ms=58 component=order-service
+ts=2026-06-15T16:23:15Z level=ERROR svc=orders msg="500 Internal Server Error" req_id=ord-3a11 endpoint="GET /orders/{id}/timeline" duration_ms=58
+ts=2026-06-15T16:27:20Z level=INFO  svc=orders msg="GET /orders" req_id=ord-3a14 customer_id=cus-6620 result=ok duration_ms=55
+ts=2026-06-15T16:31:07Z level=ERROR svc=orders msg="downstream call timed out after 3000ms" req_id=ord-3a16 endpoint="GET /orders" status=500 trace_id=- duration_ms=3003 component=order-service
+ts=2026-06-15T16:31:07Z level=ERROR svc=orders msg="500 Internal Server Error" req_id=ord-3a16 endpoint="GET /orders" duration_ms=3003
+ts=2026-06-15T16:35:12Z level=INFO  svc=orders msg="GET /orders/{id}" req_id=ord-3a18 order_id=ord-51244 result=ok duration_ms=35
+ts=2026-06-15T16:38:01Z level=WARN  svc=orders msg="heap usage high" heap_used_mb=1520 heap_max_mb=2048 component=runtime
+ts=2026-06-15T16:43:19Z level=INFO  svc=orders msg="POST /orders" req_id=ord-3a1c order_id=ord-51250 result=ok duration_ms=146
+ts=2026-06-15T16:47:12Z level=WARN  svc=orders msg="heap usage high" heap_used_mb=1339 heap_max_mb=2048 component=runtime
+ts=2026-06-15T16:47:13Z level=ERROR svc=orders msg="unhandled exception while building response" req_id=ord-3a1e endpoint="POST /orders" status=500 exc=IllegalStateException trace_id=- duration_ms=64 component=order-service
+ts=2026-06-15T16:47:13Z level=ERROR svc=orders msg="500 Internal Server Error" req_id=ord-3a1e endpoint="POST /orders" duration_ms=64
+ts=2026-06-15T16:51:08Z level=INFO  svc=orders msg="GET /orders" req_id=ord-3a20 customer_id=cus-4410 result=ok duration_ms=50
+ts=2026-06-15T16:52:29Z level=ERROR svc=orders msg="downstream call timed out after 3000ms" req_id=ord-3a21 endpoint="GET /orders/{id}/timeline" status=500 trace_id=- duration_ms=3002 component=order-service
+ts=2026-06-15T16:52:29Z level=ERROR svc=orders msg="500 Internal Server Error" req_id=ord-3a21 endpoint="GET /orders/{id}/timeline" duration_ms=3002
+ts=2026-06-15T16:57:22Z level=INFO  svc=orders msg="GET /orders/{id}" req_id=ord-3a23 order_id=ord-51259 result=ok duration_ms=37
+ts=2026-06-15T17:00:11Z level=INFO  svc=orders msg="service healthy" build=v3.18.0 commit=2b40f9 component=heartbeat note="5xx flapping subsided; no root cause confirmed"
+ts=2026-06-16T07:40:18Z level=INFO  svc=orders msg="GET /orders" req_id=or-9101 customer_id=cus-3301 result=ok duration_ms=49
+ts=2026-06-16T14:30:55Z level=INFO  svc=orders msg="POST /orders" req_id=or-9502 order_id=ord-73210 result=ok duration_ms=145
+ts=2026-06-16T15:10:33Z level=INFO  svc=orders msg="GET /orders" req_id=or-9612 customer_id=cus-5530 result=ok duration_ms=51 note="orders healthy during checkout 504s"

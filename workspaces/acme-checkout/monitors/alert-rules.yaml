@@ -1,0 +1,66 @@
+# Alert rule definitions.
+# Lets the investigator reason about WHY an alert fired (its threshold), not just THAT it did.
+# Alert payloads in scenarios/*/alerts/*.json reference these by `rule`.
+
+rules:
+  checkout-5xx-high:
+    service: checkout
+    expr: "rate(http_5xx{service=checkout}[5m]) > 0.05"
+    for: 2m
+    severity: SEV2
+    summary: "Checkout 5xx rate above 5%"
+  checkout-p99-slo:
+    service: checkout
+    expr: "p99_latency_ms{service=checkout} > 800"
+    for: 5m
+    severity: SEV2
+    summary: "Checkout p99 breached 800ms SLO"
+  redis-connections-saturated:
+    service: redis
+    expr: "redis_connected_clients / redis_maxclients > 0.9"
+    for: 1m
+    severity: SEV2
+    summary: "Redis connection pool near capacity (shared pool — see ADR-014)"
+  ratelimit-rejects-high:
+    service: rate-limiter
+    expr: "rate(ratelimit_rejected_total[5m]) > 50"
+    for: 2m
+    severity: SEV3
+    summary: "Rate-limiter rejecting an unusual volume of requests"
+  auth-error-rate-high:
+    service: auth-service
+    expr: "rate(auth_validation_failures[5m]) > 0.1"
+    for: 2m
+    severity: SEV1
+    summary: "Auth validation failure rate high (cascades to dependents)"
+  auth-pod-oom:
+    service: auth-service
+    expr: "increase(kube_pod_terminated{reason=OOMKilled,service=auth-service}[5m]) > 0"
+    for: 0m
+    severity: SEV1
+    summary: "auth-service pod OOMKilled"
+  orders-5xx-high:
+    service: orders
+    expr: "rate(http_5xx{service=orders}[5m]) > 0.03"
+    for: 2m
+    severity: SEV3
+    summary: "Orders 5xx rate elevated"
+  search-5xx-high:
+    service: search
+    expr: "rate(http_5xx{service=search}[5m]) > 0.05"
+    for: 2m
+    severity: SEV3
+    summary: "Search 5xx rate elevated"
+  disk-space-low:
+    service: log-aggregator
+    expr: "disk_free_pct{host=log-aggregator} < 15"
+    for: 10m
+    severity: SEV4
+    summary: "log-aggregator disk space low"
+    note: "CHRONIC. log-aggregator runs hot on disk; rotation lags. Known noise (INC-1003). Never customer-impacting."
+  downstream-latency-generic:
+    expr: "p99_latency_ms{service=$svc} > slo_threshold($svc)"
+    for: 3m
+    severity: SEV3
+    summary: "Per-service latency template; fires widely when a shared upstream degrades"
+    note: "Applied to most core services. A storm of these usually means ONE upstream is the real problem."

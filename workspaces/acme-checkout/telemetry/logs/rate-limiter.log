@@ -1,0 +1,59 @@
+ts=2026-06-08T04:10:02Z level=INFO  svc=rate-limiter msg="serving" buckets_active=121 redis_conns=6 max_tokens=100 window_seconds=1
+ts=2026-06-08T14:42:33Z level=INFO  svc=rate-limiter msg="health ok" redis_ping_ms=1 redis_conns=6
+ts=2026-06-09T03:18:11Z level=INFO  svc=rate-limiter msg="health ok" redis_ping_ms=1 redis_conns=6
+ts=2026-06-09T16:55:40Z level=DEBUG svc=rate-limiter msg="bucket refill tick" refilled=124 redis_conns=7
+ts=2026-06-10T05:33:09Z level=INFO  svc=rate-limiter msg="health ok" redis_ping_ms=1 redis_conns=6
+ts=2026-06-10T21:09:50Z level=INFO  svc=rate-limiter msg="health ok" redis_ping_ms=1 redis_conns=7 note="auth degraded upstream; rate-limiter unaffected"
+ts=2026-06-11T08:21:44Z level=INFO  svc=rate-limiter msg="health ok" redis_ping_ms=1 redis_conns=6
+ts=2026-06-11T20:14:02Z level=DEBUG svc=rate-limiter msg="bucket refill tick" refilled=126 redis_conns=7
+ts=2026-06-12T09:58:33Z level=INFO  svc=rate-limiter msg="health ok" redis_ping_ms=1 redis_conns=7
+ts=2026-06-12T10:01:50Z level=WARN  svc=rate-limiter msg="redis ping slow under surge" redis_ping_ms=44 redis_conns=9 note="shared pool saturated by traffic surge"
+ts=2026-06-12T10:02:30Z level=ERROR svc=rate-limiter msg="failed to open redis connection" err="max number of clients reached" redis_conns=9
+ts=2026-06-12T10:41:15Z level=INFO  svc=rate-limiter msg="health ok" redis_ping_ms=1 redis_conns=7 note="recovered after load shed"
+ts=2026-06-13T07:42:18Z level=INFO  svc=rate-limiter msg="health ok" redis_ping_ms=1 redis_conns=6
+ts=2026-06-13T18:30:55Z level=DEBUG svc=rate-limiter msg="bucket refill tick" refilled=123 redis_conns=7
+ts=2026-06-14T03:01:09Z level=INFO  svc=rate-limiter msg="health ok" redis_ping_ms=1 redis_conns=6
+ts=2026-06-14T15:48:41Z level=INFO  svc=rate-limiter msg="health ok" redis_ping_ms=1 redis_conns=6
+ts=2026-06-15T06:18:50Z level=INFO  svc=rate-limiter msg="health ok" redis_ping_ms=1 redis_conns=6
+ts=2026-06-15T19:51:22Z level=DEBUG svc=rate-limiter msg="bucket refill tick" refilled=125 redis_conns=7
+ts=2026-06-16T05:14:55Z level=INFO  svc=rate-limiter msg="health ok" redis_ping_ms=1 redis_conns=6
+ts=2026-06-16T11:42:33Z level=INFO  svc=rate-limiter msg="health ok" redis_ping_ms=1 redis_conns=7
+ts=2026-06-16T14:40:02Z level=INFO  svc=rate-limiter msg="serving" buckets_active=128 redis_conns=6 max_tokens=100 window_seconds=1
+ts=2026-06-16T14:41:11Z level=DEBUG svc=rate-limiter msg="bucket refill tick" refilled=128 redis_conns=6
+ts=2026-06-16T14:42:33Z level=INFO  svc=rate-limiter msg="health ok" redis_ping_ms=1 redis_conns=6
+ts=2026-06-16T14:43:50Z level=DEBUG svc=rate-limiter msg="bucket refill tick" refilled=131 redis_conns=7
+ts=2026-06-16T14:44:58Z level=INFO  svc=rate-limiter msg="health ok" redis_ping_ms=1 redis_conns=7
+ts=2026-06-16T14:45:01Z level=INFO  svc=rate-limiter msg="loaded config max_tokens=10" deploy=dep-7e2a window_seconds=1 burst=20 prev_max_tokens=100 source=config-watch
+ts=2026-06-16T14:45:02Z level=INFO  svc=rate-limiter msg="bucket store reinitialized for new bucket size" buckets_active=128 bucket_size=10
+ts=2026-06-16T14:45:09Z level=DEBUG svc=rate-limiter msg="bucket refill tick" refilled=128 redis_conns=11 note="more frequent refills at smaller bucket size"
+ts=2026-06-16T14:45:18Z level=DEBUG svc=rate-limiter msg="opening redis connection" reason="refill fan-out" redis_conns=15
+ts=2026-06-16T14:45:27Z level=DEBUG svc=rate-limiter msg="opening redis connection" reason="refill fan-out" redis_conns=19
+ts=2026-06-16T14:45:39Z level=WARN  svc=rate-limiter msg="bucket exhausted, throttling client" client_hash=8a21 tokens_left=0
+ts=2026-06-16T14:45:48Z level=DEBUG svc=rate-limiter msg="opening redis connection" reason="refill fan-out" redis_conns=24
+ts=2026-06-16T14:46:00Z level=WARN  svc=rate-limiter msg="bucket exhausted, throttling client" client_hash=3f0c tokens_left=0
+ts=2026-06-16T14:46:11Z level=DEBUG svc=rate-limiter msg="opening redis connection" reason="refill fan-out" redis_conns=29
+ts=2026-06-16T14:46:19Z level=INFO  svc=rate-limiter msg="429 returned" client_hash=8a21 path=/checkout reason=rate_limited
+ts=2026-06-16T14:46:24Z level=DEBUG svc=rate-limiter msg="opening redis connection" reason="refill fan-out" redis_conns=33
+ts=2026-06-16T14:46:33Z level=WARN  svc=rate-limiter msg="bucket exhausted, throttling client" client_hash=c5d2 tokens_left=0
+ts=2026-06-16T14:46:41Z level=DEBUG svc=rate-limiter msg="opening redis connection" reason="refill fan-out" redis_conns=38
+ts=2026-06-16T14:46:49Z level=INFO  svc=rate-limiter msg="429 returned" client_hash=3f0c path=/checkout reason=rate_limited
+ts=2026-06-16T14:46:55Z level=DEBUG svc=rate-limiter msg="opening redis connection" reason="refill fan-out" redis_conns=42
+ts=2026-06-16T14:47:03Z level=DEBUG svc=rate-limiter msg="opening redis connection" reason="refill fan-out" redis_conns=46
+ts=2026-06-16T14:47:11Z level=WARN  svc=rate-limiter msg="holding more redis connections than usual" redis_conns=48 baseline=6
+ts=2026-06-16T14:47:13Z level=ERROR svc=rate-limiter msg="failed to open redis connection" err="max number of clients reached" redis_conns=50
+ts=2026-06-16T14:47:25Z level=ERROR svc=rate-limiter msg="failed to open redis connection" err="max number of clients reached" redis_conns=50
+ts=2026-06-16T14:47:40Z level=WARN  svc=rate-limiter msg="refill tick delayed: connection acquire contention" pending_refills=64
+ts=2026-06-16T14:47:58Z level=INFO  svc=rate-limiter msg="429 returned" client_hash=c5d2 path=/checkout reason=rate_limited
+ts=2026-06-16T14:48:14Z level=WARN  svc=rate-limiter msg="bucket exhausted, throttling client" client_hash=8a21 tokens_left=0
+ts=2026-06-16T14:48:31Z level=INFO  svc=rate-limiter msg="429 returned" client_hash=9b77 path=/cart reason=rate_limited
+ts=2026-06-16T14:48:52Z level=ERROR svc=rate-limiter msg="failed to open redis connection" err="max number of clients reached" redis_conns=50
+ts=2026-06-16T14:49:20Z level=WARN  svc=rate-limiter msg="rejected_total climbing" rejected_total=287 window=5m
+ts=2026-06-16T14:50:05Z level=WARN  svc=rate-limiter msg="rejected_total climbing" rejected_total=312 window=5m
+ts=2026-06-16T14:51:33Z level=ERROR svc=rate-limiter msg="failed to open redis connection" err="max number of clients reached" redis_conns=50
+ts=2026-06-16T14:54:10Z level=WARN  svc=rate-limiter msg="bucket exhausted, throttling client" client_hash=3f0c tokens_left=0
+ts=2026-06-16T14:58:44Z level=ERROR svc=rate-limiter msg="failed to open redis connection" err="max number of clients reached" redis_conns=50
+ts=2026-06-16T15:03:19Z level=WARN  svc=rate-limiter msg="rejected_total climbing" rejected_total=298 window=5m
+ts=2026-06-16T15:09:02Z level=ERROR svc=rate-limiter msg="failed to open redis connection" err="max number of clients reached" redis_conns=50
+ts=2026-06-16T15:16:48Z level=WARN  svc=rate-limiter msg="bucket exhausted, throttling client" client_hash=c5d2 tokens_left=0
+ts=2026-06-16T15:23:55Z level=ERROR svc=rate-limiter msg="failed to open redis connection" err="max number of clients reached" redis_conns=50
+ts=2026-06-16T15:29:30Z level=WARN  svc=rate-limiter msg="rejected_total still elevated" rejected_total=276 window=5m

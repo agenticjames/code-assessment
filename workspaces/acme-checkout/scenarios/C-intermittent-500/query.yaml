@@ -1,0 +1,9 @@
+id: C
+slug: intermittent-500
+workspace: acme-checkout
+query: "we've had intermittent 500s for the last hour and can't reproduce it"
+mode: live
+as_of: 2026-06-15T17:00:00Z      # end of the hour; the war-room is genuinely unresolved (no leak of an answer)
+look_back: 1h
+severity: SEV3
+evidence: telemetry/

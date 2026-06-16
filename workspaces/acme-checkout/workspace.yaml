@@ -1,0 +1,31 @@
+# Acme Checkout — standing operational world.
+# The workspace is the company's persistent context (topology, teams, runbooks, memory).
+# Time-bounded incidents to investigate live under scenarios/.
+
+name: acme-checkout
+display_name: Acme Checkout
+domain: e-commerce
+description: >
+  Acme's customer-facing e-commerce platform — browse, cart, checkout, payments,
+  fulfillment. ~21 services across edge, core, platform, data, and external tiers.
+environment: production
+region: us-east-1
+timezone: UTC                      # ALL timestamps in this workspace are UTC.
+date_anchor: 2026-06-16            # "today" for this dataset; library incidents span the prior ~6 months.
+
+conventions:
+  incident_ids: "INC-#### (4-digit)"
+  deploy_ids: "dep-#### (4 hex chars, e.g. dep-7e2a)"
+  ticket_ids: "ZD-#### (Zendesk support tickets)"
+  alert_fingerprints: "8 hex chars"
+  metrics: "CSV; columns: timestamp,value; UTC ISO-8601; 30s–60s cadence"
+
+catalog:
+  topology: topology/services.yaml
+  teams: teams.yaml
+  slos: slos.yaml
+  monitors: monitors/alert-rules.yaml
+  adr: adr/
+  runbooks: runbooks/
+  incident_library: incident-library/
+  scenarios: scenarios/

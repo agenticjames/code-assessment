@@ -4,7 +4,19 @@
 > **DESIGN = the *what*** (product, architecture). **DELIVERY = the *when*** (build order).
 > **This = the *data to author*** — the synthetic world the agent investigates, and the eval set that grades it.
 >
-> **Status:** spec locked, pre-build. No `workspaces/` files exist yet. This document is the single source of truth for authoring them.
+> **Status:** BUILT, then RESLICED. The dataset exists under `workspaces/acme-checkout/`.
+>
+> ⚠️ **Architecture update (supersedes the per-scenario folder layout in §2 below).** Evidence is
+> no longer partitioned per scenario. It now lives in ONE continuous, time-indexed corpus at
+> `workspaces/acme-checkout/telemetry/` (per-service `logs/`, continuous `metrics/`, one
+> `alerts.jsonl`, one `deploys.yaml`, `changes/` diffs, a rolling `chat/incidents.md`, `captures/`,
+> `support-tickets.md`, `status-updates.md`). A "scenario" is now a **thin eval pointer** —
+> `scenarios/<X>/query.yaml` (the question + an `as_of` timestamp or a `range`) + `HIDDEN_TRUTH.md`
+> (the graded key). The agent slices the corpus by time+service; `as_of` clamps visibility so it
+> can't see the future. This makes open-ended range queries ("why did it go down between X and Y")
+> answerable — see scenario **G**. The §0 richness philosophy and §5–§7 (scenarios, HIDDEN_TRUTH
+> schema, coverage) still hold; only the *storage layout* changed. Authoritative orientation +
+> eval set: `workspaces/acme-checkout/README.md`.
 
 ---
 

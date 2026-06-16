@@ -1,0 +1,14 @@
+# captured by sam @ 2026-06-16T14:50:11Z during the checkout 504 incident
+# $ redis-cli -h redis.prod INFO clients ; redis-cli INFO stats | grep -E 'rejected|conn'
+# Clients
+connected_clients:50
+cluster_connections:0
+maxclients:50
+blocked_clients:7
+client_recent_max_input_buffer:20480
+# Stats
+total_connections_received:184213
+rejected_connections:1442          # connections refused because maxclients (50) was reached
+total_commands_processed:9982144
+instantaneous_ops_per_sec:14127
+# (pool is at 50/50 — nothing left for checkout to acquire. shared by rate-limiter, checkout, cart.)

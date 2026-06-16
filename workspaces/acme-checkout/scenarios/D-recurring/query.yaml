@@ -1,0 +1,12 @@
+id: D
+slug: recurring-connection-errors
+workspace: acme-checkout
+query: "orders are failing with connection errors again"
+mode: live
+as_of: 2026-06-12T10:20:00Z      # mid-incident; resolution (10:40) is after as_of → hidden
+look_back: 30m
+severity: SEV2
+evidence: telemetry/
+note: >
+  The graded capability is SEMANTIC recall of INC-0987 (same failure class, different words).
+  The library lives in ../../incident-library/.

@@ -1,0 +1,16 @@
+{
+  "_captured": "2026-06-16T14:50:30Z during the checkout 504 incident",
+  "trace_id": "a7e2c0d4f1b39c80",
+  "request": "POST /checkout",
+  "status": 504,
+  "duration_ms": 8042,
+  "spans": [
+    {"span": "api-gateway.handle", "service": "api-gateway", "start_ms": 0, "duration_ms": 8042, "status": "timeout"},
+    {"span": "checkout.place_order", "service": "checkout", "start_ms": 3, "duration_ms": 8030, "status": "error"},
+    {"span": "auth.validate_token", "service": "auth-service", "start_ms": 5, "duration_ms": 12, "status": "ok"},
+    {"span": "redis.acquire_connection", "service": "redis", "start_ms": 20, "duration_ms": 5000, "status": "timeout", "note": "timed out waiting for a connection from the pool (max 50)"},
+    {"span": "orders-db.query", "service": "orders-db", "start_ms": 5025, "duration_ms": 22, "status": "ok", "note": "DB itself is fast"},
+    {"span": "payment-gateway.charge", "service": "payment-gateway", "start_ms": 5050, "duration_ms": 180, "status": "ok"}
+  ],
+  "_reading": "The 8s is spent almost entirely in redis.acquire_connection (5s timeout). orders-db and payment-gateway spans are fast/healthy — the bottleneck is the shared Redis pool, not the DB."
+}
