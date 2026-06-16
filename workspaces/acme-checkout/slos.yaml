@@ -1,0 +1,23 @@
+# Service level objectives + severity definitions.
+# Grounds incident severity and the stakeholder note (what's the customer/revenue impact?).
+
+severities:
+  SEV1: "Customer-facing outage or revenue loss; all-hands; IC (mei) paged."
+  SEV2: "Major degradation; significant customer impact; owning team + IC."
+  SEV3: "Minor / partial degradation; limited impact; owning team handles."
+  SEV4: "No customer impact; informational / chronic; no page."
+
+slos:
+  checkout-latency:
+    service: checkout
+    objective: "p99 < 800ms"
+    measured: "rolling 5m p99 of POST /checkout"
+    error_budget: "99.9% of requests < 800ms over 30d"
+    revenue_note: "Checkout failures map ~1:1 to lost orders (~$4.2k/min at peak)."
+  gateway-availability:
+    service: api-gateway
+    objective: "99.95% non-5xx over 30d"
+  auth-availability:
+    service: auth-service
+    objective: "99.95% successful token validations over 30d"
+    note: "auth-service is on the request path of ~8 services; a breach here cascades widely."

@@ -1,0 +1,12 @@
+# captured by sam @ 2026-06-16T14:50:40Z
+# $ kubectl get pods -n prod -l 'app in (checkout,redis,rate-limiter,orders-db)'
+NAME                            READY   STATUS    RESTARTS   AGE
+checkout-7c9f8b6d4-2xk9p        1/1     Running   0          6d
+checkout-7c9f8b6d4-l8mzt        1/1     Running   0          6d
+checkout-7c9f8b6d4-q4w7n        1/1     Running   0          6d
+rate-limiter-5d7c4b9f8-h2vbn    1/1     Running   0          5m       # restarted 14:45 — config deploy dep-7e2a
+rate-limiter-5d7c4b9f8-pp3kd    1/1     Running   0          5m
+redis-0                         1/1     Running   0          22d
+orders-db-0                     1/1     Running   0          22d
+# Nothing is crashlooping or OOMKilled. checkout pods are healthy and serving — this is not a
+# crash; it's resource contention. rate-limiter pods are 5m old (deployed at 14:45).

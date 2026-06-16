@@ -1,0 +1,56 @@
+ts=2026-06-08T06:12:34Z level=INFO  svc=auth-service msg="POST /validate" req_id=av-4401 token=tok-...a11 result=ok duration_ms=7
+ts=2026-06-08T15:40:18Z level=INFO  svc=auth-service msg="session refresh ok" req_id=av-4408 store=sessions-store duration_ms=11
+ts=2026-06-09T04:22:09Z level=INFO  svc=auth-service msg="POST /validate" req_id=av-4502 token=tok-...c3d result=ok duration_ms=6
+ts=2026-06-09T17:55:41Z level=DEBUG svc=auth-service msg="heap stats" rss_mi=1492 heap_mi=1280 component=runtime note="normal working set ~1.5Gi under 2Gi limit"
+ts=2026-06-10T08:18:33Z level=INFO  svc=auth-service msg="POST /validate" req_id=av-4901 token=tok-...e07 result=ok duration_ms=7
+ts=2026-06-10T21:00:34Z level=INFO  svc=auth-service msg="POST /validate" req_id=av-5501 token=tok-...c41 result=ok duration_ms=7
+ts=2026-06-10T21:01:02Z level=INFO  svc=auth-service msg="POST /validate" req_id=av-5503 token=tok-...9a2 result=ok duration_ms=6
+ts=2026-06-10T21:02:18Z level=INFO  svc=auth-service msg="session refresh ok" req_id=av-5504 store=sessions-store duration_ms=11
+ts=2026-06-10T21:04:55Z level=INFO  svc=auth-service msg="POST /validate" req_id=av-5510 token=tok-...77b result=ok duration_ms=8
+ts=2026-06-10T21:05:03Z level=INFO  svc=auth-service msg="config applied: pod spec updated" component=kubelet generation=48 note="rollout: new ReplicaSet auth-service-7d9c8b6f5; mem_limit 2048Mi -> 1024Mi"
+ts=2026-06-10T21:06:12Z level=INFO  svc=auth-service msg="pod auth-service-7d9c8b6f5-q2x started" component=runtime mem_limit_mi=1024
+ts=2026-06-10T21:07:20Z level=DEBUG svc=auth-service msg="heap stats" rss_mi=812 heap_mi=690 component=runtime
+ts=2026-06-10T21:07:55Z level=INFO  svc=auth-service msg="POST /validate" req_id=av-5519 token=tok-...8f3 result=ok duration_ms=7
+ts=2026-06-10T21:08:04Z level=WARN  svc=auth-service msg="memory usage approaching limit" rss_mi=1010 limit_mi=1024 pct=98.6 component=runtime
+ts=2026-06-10T21:08:31Z level=WARN  svc=auth-service msg="memory usage exceeded soft threshold" rss_mi=1024 limit_mi=1024 component=runtime note="working set ~1.5Gi will not fit under a 1Gi limit"
+ts=2026-06-10T21:09:10Z level=WARN  svc=auth-service msg="GC pause elevated under memory pressure" pause_ms=180 rss_mi=1022 component=runtime
+ts=2026-06-10T21:09:48Z level=INFO  svc=auth-service msg="POST /validate" req_id=av-5526 token=tok-...e07 result=ok duration_ms=14
+ts=2026-06-10T21:10:02Z level=ERROR svc=auth-service msg="container exceeded memory limit" rss_mi=1031 limit_mi=1024 component=runtime
+ts=2026-06-10T21:10:02Z level=ERROR svc=auth-service msg="pod auth-service-7d9c8b6f5-q2x OOMKilled" reason=OOMKilled exit_code=137 component=kubelet
+ts=2026-06-10T21:10:21Z level=INFO  svc=auth-service msg="pod auth-service-7d9c8b6f5-q2x restarting" restart_count=1 component=kubelet
+ts=2026-06-10T21:10:44Z level=INFO  svc=auth-service msg="pod auth-service-7d9c8b6f5-q2x started" component=runtime mem_limit_mi=1024 note="warming up"
+ts=2026-06-10T21:10:58Z level=INFO  svc=auth-service msg="POST /validate" req_id=av-5533 token=tok-...b40 result=ok duration_ms=8 note="served between restarts"
+ts=2026-06-10T21:11:40Z level=WARN  svc=auth-service msg="memory usage approaching limit" rss_mi=1014 limit_mi=1024 pct=99.0 component=runtime
+ts=2026-06-10T21:11:55Z level=ERROR svc=auth-service msg="container exceeded memory limit" rss_mi=1029 limit_mi=1024 component=runtime
+ts=2026-06-10T21:11:56Z level=ERROR svc=auth-service msg="pod auth-service-7d9c8b6f5-q2x OOMKilled" reason=OOMKilled exit_code=137 restart_count=1 component=kubelet
+ts=2026-06-10T21:12:09Z level=WARN  svc=auth-service msg="POST /validate" req_id=av-5538 result=error error="context deadline exceeded" duration_ms=2001
+ts=2026-06-10T21:12:33Z level=INFO  svc=auth-service msg="pod auth-service-7d9c8b6f5-q2x restarting" restart_count=2 component=kubelet
+ts=2026-06-10T21:12:51Z level=INFO  svc=auth-service msg="pod auth-service-7d9c8b6f5-q2x started" component=runtime mem_limit_mi=1024
+ts=2026-06-10T21:13:04Z level=INFO  svc=auth-service msg="POST /validate" req_id=av-5544 token=tok-...3d1 result=ok duration_ms=9 note="served between restarts"
+ts=2026-06-10T21:13:25Z level=WARN  svc=auth-service msg="validation latency degraded; pool warming" p99_ms=2100 component=server
+ts=2026-06-10T21:14:01Z level=ERROR svc=auth-service msg="container exceeded memory limit" rss_mi=1033 limit_mi=1024 component=runtime
+ts=2026-06-10T21:14:02Z level=ERROR svc=auth-service msg="pod auth-service-7d9c8b6f5-q2x OOMKilled" reason=OOMKilled exit_code=137 restart_count=2 component=kubelet
+ts=2026-06-10T21:14:03Z level=ERROR svc=auth-service msg="readiness probe failing; 0/3 pods ready" component=kubelet note="CrashLoopBackOff"
+ts=2026-06-10T21:14:40Z level=INFO  svc=auth-service msg="pod auth-service-7d9c8b6f5-q2x restarting" restart_count=3 backoff_s=20 component=kubelet
+ts=2026-06-10T21:15:11Z level=INFO  svc=auth-service msg="pod auth-service-7d9c8b6f5-q2x started" component=runtime mem_limit_mi=1024
+ts=2026-06-10T21:15:29Z level=INFO  svc=auth-service msg="POST /validate" req_id=av-5556 token=tok-...a72 result=ok duration_ms=8 note="served between restarts"
+ts=2026-06-10T21:15:53Z level=ERROR svc=auth-service msg="pod auth-service-7d9c8b6f5-q2x OOMKilled" reason=OOMKilled exit_code=137 restart_count=3 component=kubelet
+ts=2026-06-10T21:17:14Z level=ERROR svc=auth-service msg="pod auth-service-7d9c8b6f5-q2x OOMKilled" reason=OOMKilled exit_code=137 restart_count=4 component=kubelet
+ts=2026-06-10T21:18:02Z level=WARN  svc=auth-service msg="sessions-store reachable; backend healthy (not the bottleneck)" store=sessions-store duration_ms=12 component=server
+ts=2026-06-10T21:18:49Z level=ERROR svc=auth-service msg="pod auth-service-7d9c8b6f5-q2x OOMKilled" reason=OOMKilled exit_code=137 restart_count=5 component=kubelet
+ts=2026-06-10T21:21:33Z level=ERROR svc=auth-service msg="pod auth-service-7d9c8b6f5-q2x OOMKilled" reason=OOMKilled exit_code=137 restart_count=7 component=kubelet
+ts=2026-06-10T21:26:18Z level=ERROR svc=auth-service msg="pod auth-service-7d9c8b6f5-q2x OOMKilled" reason=OOMKilled exit_code=137 restart_count=9 component=kubelet
+ts=2026-06-10T21:28:31Z level=INFO  svc=auth-service msg="config applied: pod spec updated" component=kubelet generation=49 note="mem_limit restored 1024Mi -> 2048Mi (revert of generation 48)"
+ts=2026-06-10T21:28:52Z level=INFO  svc=auth-service msg="pod auth-service-7d9c8b6f5-q2x started" component=runtime mem_limit_mi=2048
+ts=2026-06-10T21:30:48Z level=INFO  svc=auth-service msg="heap stats" rss_mi=1488 heap_mi=1276 component=runtime note="settled near normal working set ~1.5Gi, well under 2Gi limit"
+ts=2026-06-10T21:31:05Z level=INFO  svc=auth-service msg="readiness probe passing; 3/3 pods ready" component=kubelet
+ts=2026-06-10T21:33:12Z level=INFO  svc=auth-service msg="validation latency back to baseline" p99_ms=18 component=server
+ts=2026-06-10T21:35:26Z level=INFO  svc=auth-service msg="no OOMKill events in last 5m; crashloop cleared" component=kubelet
+ts=2026-06-11T09:14:02Z level=INFO  svc=auth-service msg="POST /validate" req_id=av-6101 token=tok-...4f8 result=ok duration_ms=7
+ts=2026-06-11T20:40:51Z level=DEBUG svc=auth-service msg="heap stats" rss_mi=1501 heap_mi=1284 component=runtime
+ts=2026-06-12T10:05:18Z level=INFO  svc=auth-service msg="POST /validate" req_id=av-6602 token=tok-...22a result=ok duration_ms=8 note="auth healthy during redis surge"
+ts=2026-06-13T11:30:44Z level=INFO  svc=auth-service msg="POST /validate" req_id=av-6803 token=tok-...90c result=ok duration_ms=6
+ts=2026-06-14T14:18:09Z level=INFO  svc=auth-service msg="session refresh ok" req_id=av-7004 store=sessions-store duration_ms=10
+ts=2026-06-15T16:22:33Z level=INFO  svc=auth-service msg="POST /validate" req_id=av-7505 token=tok-...d61 result=ok duration_ms=7 note="auth healthy during orders 5xx"
+ts=2026-06-16T08:18:50Z level=INFO  svc=auth-service msg="POST /validate" req_id=av-8006 token=tok-...3e9 result=ok duration_ms=7
+ts=2026-06-16T14:47:41Z level=INFO  svc=auth-service msg="POST /validate" req_id=av-8412 token=tok-...7b2 result=ok duration_ms=8 note="auth healthy during checkout 504s"

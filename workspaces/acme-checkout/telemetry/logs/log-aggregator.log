@@ -1,0 +1,30 @@
+2026-06-08T02:14:00Z level=WARN  host=log-aggregator-0 component=disk-monitor msg="disk usage 87% on /var/log (threshold 85%)" free_gb=37
+2026-06-08T02:14:01Z level=WARN  host=log-aggregator-0 component=disk-monitor msg="disk-space-low alert opened" sev=SEV4 ref=INC-1003
+2026-06-08T05:40:00Z level=INFO  host=log-aggregator-0 component=rotator msg="rotated 11 segments, reclaimed 5gb"
+2026-06-08T05:40:30Z level=WARN  host=log-aggregator-0 component=disk-monitor msg="disk usage 84% on /var/log (recovered after rotation)" free_gb=44
+2026-06-08T14:22:00Z level=WARN  host=log-aggregator-0 component=disk-monitor msg="disk usage 86% on /var/log" free_gb=39
+2026-06-09T02:27:00Z level=WARN  host=log-aggregator-0 component=disk-monitor msg="disk usage 88% on /var/log" free_gb=34
+2026-06-09T11:48:00Z level=INFO  host=log-aggregator-0 component=ingest msg="ingest ok" lines_per_sec=17840 lag_ms=11
+2026-06-09T18:33:00Z level=WARN  host=log-aggregator-0 component=disk-monitor msg="disk usage 86% on /var/log" free_gb=38
+2026-06-10T02:09:00Z level=WARN  host=log-aggregator-0 component=disk-monitor msg="disk usage 86% on /var/log" free_gb=38
+2026-06-10T13:50:00Z level=WARN  host=log-aggregator-0 component=disk-monitor msg="disk usage 87% on /var/log" free_gb=36
+2026-06-10T21:12:00Z level=INFO  host=log-aggregator-0 component=ingest msg="ingest spike (incident traffic)" lines_per_sec=39880 lag_ms=20
+2026-06-10T22:40:00Z level=WARN  host=log-aggregator-0 component=disk-monitor msg="disk usage 87% on /var/log" free_gb=36
+2026-06-11T02:31:00Z level=WARN  host=log-aggregator-0 component=disk-monitor msg="disk usage 88% on /var/log" free_gb=35
+2026-06-11T16:05:00Z level=WARN  host=log-aggregator-0 component=disk-monitor msg="disk usage 86% on /var/log" free_gb=38
+2026-06-12T02:31:00Z level=WARN  host=log-aggregator-0 component=disk-monitor msg="disk usage 89% on /var/log" free_gb=33
+2026-06-12T10:02:00Z level=INFO  host=log-aggregator-0 component=ingest msg="ingest spike (incident traffic)" lines_per_sec=42110 lag_ms=23
+2026-06-12T19:18:00Z level=WARN  host=log-aggregator-0 component=disk-monitor msg="disk usage 87% on /var/log" free_gb=36
+2026-06-13T02:22:00Z level=WARN  host=log-aggregator-0 component=disk-monitor msg="disk usage 87% on /var/log" free_gb=36
+2026-06-13T12:40:00Z level=INFO  host=log-aggregator-0 component=rotator msg="rotated 13 segments, reclaimed 6gb"
+2026-06-13T12:41:00Z level=WARN  host=log-aggregator-0 component=disk-monitor msg="disk usage 84% on /var/log (recovered briefly)" free_gb=45
+2026-06-14T02:22:00Z level=WARN  host=log-aggregator-0 component=disk-monitor msg="disk usage 87% on /var/log" free_gb=36
+2026-06-14T15:55:00Z level=WARN  host=log-aggregator-0 component=disk-monitor msg="disk usage 86% on /var/log" free_gb=38
+2026-06-15T03:22:00Z level=WARN  host=log-aggregator-0 component=disk-monitor msg="disk usage 87% on /var/log" free_gb=36
+2026-06-15T19:05:00Z level=WARN  host=log-aggregator-0 component=disk-monitor msg="disk usage 87% on /var/log" free_gb=36
+2026-06-16T02:18:00Z level=WARN  host=log-aggregator-0 component=disk-monitor msg="disk usage 88% on /var/log" free_gb=35
+2026-06-16T09:14:33Z level=INFO  host=log-aggregator-0 component=ingest msg="ingest ok" lines_per_sec=18200 lag_ms=12
+2026-06-16T13:30:00Z level=WARN  host=log-aggregator-0 component=disk-monitor msg="disk usage 87% on /var/log" free_gb=35
+2026-06-16T14:47:00Z level=INFO  host=log-aggregator-0 component=ingest msg="ingest spike (incident traffic)" lines_per_sec=41207 lag_ms=22
+2026-06-16T15:00:01Z level=INFO  host=log-aggregator-0 component=disk-monitor msg="rotation backlog: 3 segments queued; ops aware, see INC-1003"
+2026-06-16T15:30:00Z level=WARN  host=log-aggregator-0 component=disk-monitor msg="disk usage 87% on /var/log" free_gb=34

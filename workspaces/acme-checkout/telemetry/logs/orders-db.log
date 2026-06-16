@@ -1,0 +1,58 @@
+2026-06-08 03:11:02.114 UTC [4471] LOG:  checkpoint complete: wrote 201 buffers (1.2%); 0 WAL file(s) added
+2026-06-08 11:42:18.330 UTC [4882] LOG:  duration: 22.6 ms  statement: SELECT * FROM orders WHERE order_id = $1
+2026-06-08 17:55:41.882 UTC [4471] LOG:  automatic vacuum of table "public.orders": index scans: 1
+2026-06-09 02:30:09.027 UTC [4471] LOG:  checkpoint complete: wrote 196 buffers (1.2%)
+2026-06-09 11:21:44.660 UTC [4882] LOG:  duration: 23.1 ms  statement: INSERT INTO orders (...) VALUES (...)
+2026-06-09 20:14:55.226 UTC [4471] LOG:  connections: 16 active / 100 max
+2026-06-10 04:18:33.910 UTC [4471] LOG:  checkpoint complete: wrote 203 buffers (1.2%)
+2026-06-10 13:09:21.447 UTC [4882] LOG:  duration: 24.0 ms  statement: SELECT * FROM orders WHERE customer_id = $1 ORDER BY created_at DESC LIMIT 20
+2026-06-10 21:13:50.778 UTC [4882] LOG:  duration: 23.6 ms  statement: INSERT INTO orders (...) VALUES (...)
+2026-06-10 21:14:02.118 UTC [4882] LOG:  duration: 4.1 ms   statement: SELECT 1
+2026-06-11 03:41:17.512 UTC [4471] LOG:  checkpoint complete: wrote 207 buffers (1.3%)
+2026-06-11 14:52:30.664 UTC [4882] LOG:  duration: 22.4 ms  statement: SELECT * FROM orders WHERE order_id = $1
+2026-06-12 02:55:09.118 UTC [4471] LOG:  automatic vacuum of table "public.cart_items": index scans: 1
+2026-06-12 10:02:48.220 UTC [4882] LOG:  duration: 25.1 ms  statement: INSERT INTO orders (...) VALUES (...)
+2026-06-12 10:03:30.667 UTC [4471] LOG:  connections: 19 active / 100 max
+2026-06-13 04:11:02.114 UTC [4471] LOG:  checkpoint complete: wrote 199 buffers (1.2%)
+2026-06-13 15:48:41.882 UTC [4882] LOG:  duration: 23.4 ms  statement: SELECT * FROM orders WHERE customer_id = $1 ORDER BY created_at DESC LIMIT 20
+2026-06-14 02:31:09.778 UTC [4471] LOG:  checkpoint complete: wrote 205 buffers (1.2%)
+2026-06-14 12:20:55.226 UTC [4882] LOG:  duration: 22.9 ms  statement: INSERT INTO orders (...) VALUES (...)
+2026-06-15 03:18:33.910 UTC [4471] LOG:  checkpoint complete: wrote 202 buffers (1.2%)
+2026-06-15 16:08:12.447 UTC [4882] LOG:  duration: 23.7 ms  statement: SELECT * FROM orders WHERE order_id = $1
+2026-06-15 16:31:40.118 UTC [4471] LOG:  connections: 18 active / 100 max
+2026-06-16 02:14:02.114 UTC [4471] LOG:  checkpoint complete: wrote 200 buffers (1.2%)
+2026-06-16 09:40:18.330 UTC [4882] LOG:  duration: 22.8 ms  statement: SELECT * FROM orders WHERE order_id = $1
+2026-06-16 13:58:02.114 UTC [4471] LOG:  checkpoint complete: wrote 214 buffers (1.3%); 0 WAL file(s) added
+2026-06-16 13:59:41.882 UTC [4471] LOG:  automatic vacuum of table "public.cart_items": index scans: 1
+2026-06-16 14:00:03.027 UTC [5120] LOG:  statement: BEGIN; -- migration mig-0616 start (CREATE INDEX CONCURRENTLY idx_orders_customer)
+2026-06-16 14:00:03.140 UTC [5120] LOG:  migration mig-0616 started: CREATE INDEX CONCURRENTLY idx_orders_customer ON orders (customer_id)
+2026-06-16 14:02:55.660 UTC [5120] LOG:  index build progress: 31% (mig-0616)
+2026-06-16 14:06:12.301 UTC [5120] LOG:  index build progress: 64% (mig-0616)
+2026-06-16 14:09:48.774 UTC [5120] LOG:  index build progress: 91% (mig-0616)
+2026-06-16 14:11:59.515 UTC [5120] LOG:  index build progress: 100% (mig-0616)
+2026-06-16 14:12:04.882 UTC [5120] LOG:  migration mig-0616 completed successfully in 721s; index idx_orders_customer is VALID
+2026-06-16 14:12:05.001 UTC [5120] LOG:  statement: COMMIT;
+2026-06-16 14:13:20.447 UTC [4471] LOG:  checkpoint complete: wrote 198 buffers (1.2%)
+2026-06-16 14:18:33.910 UTC [4882] LOG:  duration: 21.4 ms  statement: INSERT INTO orders (...) VALUES (...)
+2026-06-16 14:24:51.226 UTC [4882] LOG:  duration: 23.8 ms  statement: SELECT * FROM orders WHERE order_id = $1
+2026-06-16 14:31:09.778 UTC [4471] LOG:  checkpoint complete: wrote 205 buffers (1.2%)
+2026-06-16 14:39:44.512 UTC [4882] LOG:  duration: 22.1 ms  statement: INSERT INTO orders (...) VALUES (...)
+2026-06-16 14:45:17.003 UTC [4882] LOG:  duration: 24.6 ms  statement: SELECT * FROM orders WHERE customer_id = $1 ORDER BY created_at DESC LIMIT 20
+2026-06-16 14:47:10.330 UTC [4882] LOG:  duration: 4.1 ms   statement: SELECT 1
+2026-06-16 14:47:55.881 UTC [4882] LOG:  duration: 22.7 ms  statement: INSERT INTO orders (...) VALUES (...)
+2026-06-16 14:48:18.220 UTC [4882] LOG:  duration: 4.0 ms   statement: SELECT 1
+2026-06-16 14:49:39.664 UTC [4882] LOG:  duration: 23.3 ms  statement: SELECT * FROM orders WHERE order_id = $1
+2026-06-16 14:50:21.118 UTC [4471] LOG:  connections: 17 active / 100 max
+2026-06-16 14:52:30.554 UTC [6004] LOG:  statement: BEGIN; -- migration mig-0616 rollback start (DROP INDEX idx_orders_customer)
+2026-06-16 14:52:30.661 UTC [6004] LOG:  migration mig-0616 rollback started: DROP INDEX CONCURRENTLY idx_orders_customer
+2026-06-16 14:55:48.992 UTC [6004] LOG:  rollback progress: dropping index idx_orders_customer
+2026-06-16 14:58:02.337 UTC [6004] LOG:  migration mig-0616 rollback completed successfully in 332s; index removed
+2026-06-16 14:58:02.450 UTC [6004] LOG:  statement: COMMIT;
+2026-06-16 14:59:11.706 UTC [4882] LOG:  duration: 23.9 ms  statement: INSERT INTO orders (...) VALUES (...)
+2026-06-16 15:03:44.220 UTC [4882] LOG:  duration: 22.5 ms  statement: SELECT * FROM orders WHERE order_id = $1
+2026-06-16 15:07:55.881 UTC [4471] LOG:  checkpoint complete: wrote 211 buffers (1.3%)
+2026-06-16 15:09:08.114 UTC [4882] LOG:  duration: 4.2 ms   statement: SELECT 1
+2026-06-16 15:12:30.667 UTC [4882] LOG:  duration: 24.1 ms  statement: INSERT INTO orders (...) VALUES (...)
+2026-06-16 15:18:02.993 UTC [4882] LOG:  duration: 23.0 ms  statement: SELECT * FROM orders WHERE customer_id = $1 ORDER BY created_at DESC LIMIT 20
+2026-06-16 15:21:40.118 UTC [4471] LOG:  connections: 15 active / 100 max
+2026-06-16 15:29:47.880 UTC [4471] LOG:  checkpoint complete: wrote 203 buffers (1.2%)

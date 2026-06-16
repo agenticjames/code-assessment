@@ -1,0 +1,62 @@
+ts=2026-06-08T06:40:12Z level=INFO  svc=search msg="GET /search" req_id=req-7a0101 query="running shoes" results=44 result=ok duration_ms=57
+ts=2026-06-08T16:48:30Z level=INFO  svc=search msg="reindex schema bump applied (dep-a3f0)" component=index note="search-index reindexed"
+ts=2026-06-09T11:22:09Z level=INFO  svc=search msg="GET /search" req_id=req-7a0240 query="usb-c cable" results=18 result=ok duration_ms=52
+ts=2026-06-10T18:32:18Z level=INFO  svc=search msg="rolling update: serving search synonyms update (dep-2d71)" component=deploy
+ts=2026-06-10T20:14:55Z level=INFO  svc=search msg="GET /search" req_id=req-7a0388 query="coffee maker" results=27 result=ok duration_ms=55
+ts=2026-06-10T21:12:40Z level=INFO  svc=search msg="GET /search" req_id=req-7a0401 query="desk lamp" results=21 result=ok duration_ms=58
+ts=2026-06-10T21:13:14Z level=WARN  svc=search msg="auth validate slow" req_id=req-7a0403 upstream=auth-service duration_ms=2210
+ts=2026-06-10T21:13:20Z level=ERROR svc=search msg="auth check timed out" req_id=req-7a0405 upstream=auth-service timeout_ms=2000 op=GET_/search
+ts=2026-06-10T21:13:21Z level=ERROR svc=search msg="request aborted: token validation failed" req_id=req-7a0405 status=401_unauthorized duration_ms=2008
+  at auth.client.validate(auth_client.go:71)
+  at search.requireAuth(middleware.go:48)
+  at search.handle(SearchHandler.java:51)
+ts=2026-06-10T21:14:50Z level=ERROR svc=search msg="auth check timed out" req_id=req-7a0407 upstream=auth-service timeout_ms=2000 op=GET_/search
+ts=2026-06-10T21:16:33Z level=ERROR svc=search msg="401 from auth-service" req_id=req-7a0409 upstream=auth-service status=401 op=GET_/search
+ts=2026-06-10T21:20:18Z level=ERROR svc=search msg="auth check timed out" req_id=req-7a040b upstream=auth-service timeout_ms=2000 op=GET_/search
+ts=2026-06-10T21:30:44Z level=WARN  svc=search msg="auth validate recovering; fewer timeouts" req_id=req-7a040d upstream=auth-service duration_ms=190
+ts=2026-06-10T21:35:09Z level=INFO  svc=search msg="error rate back to baseline" component=server note="cleared as auth-service recovered"
+ts=2026-06-11T09:51:22Z level=INFO  svc=search msg="GET /search" req_id=req-7a0501 query="wireless earbuds" results=33 result=ok duration_ms=60
+ts=2026-06-12T14:18:33Z level=INFO  svc=search msg="GET /search" req_id=req-7a0602 query="yoga mat" results=24 result=ok duration_ms=56
+ts=2026-06-13T15:40:18Z level=INFO  svc=search msg="rolling update: serving relevance tuning (dep-d4a9)" component=deploy
+ts=2026-06-13T20:30:51Z level=INFO  svc=search msg="GET /search" req_id=req-7a0703 query="phone case" results=37 result=ok duration_ms=54
+ts=2026-06-14T11:42:09Z level=INFO  svc=search msg="GET /search" req_id=req-7a0801 query="water bottle" results=31 result=ok duration_ms=55
+ts=2026-06-15T13:30:44Z level=INFO  svc=search msg="GET /search" req_id=req-7a0902 query="notebook" results=26 result=ok duration_ms=57
+ts=2026-06-16T08:12:04Z level=INFO  svc=search msg="GET /search" req_id=req-9a2201 query="running shoes" results=42 result=ok duration_ms=58
+ts=2026-06-16T08:13:11Z level=INFO  svc=search msg="GET /search" req_id=req-9a2205 query="" results=0 result=ok duration_ms=12 note="empty query -> emptyResults()"
+ts=2026-06-16T08:14:25Z level=INFO  svc=search msg="GET /search" req_id=req-9a2209 query="coffee maker" results=27 result=ok duration_ms=55
+ts=2026-06-16T08:15:02Z level=INFO  svc=search msg="rolling update: pulling image search:2026.06.16-r2 (dep-5b71)" component=deploy
+ts=2026-06-16T08:15:33Z level=INFO  svc=search msg="new pods healthy; serving search:2026.06.16-r2" component=deploy rev=dep-5b71
+ts=2026-06-16T08:15:51Z level=INFO  svc=search msg="GET /search" req_id=req-9a220b query="desk lamp" results=21 result=ok duration_ms=57
+ts=2026-06-16T08:16:08Z level=ERROR svc=search msg="unhandled exception serving GET /search" req_id=req-9a220d query="" status=500 duration_ms=9
+java.lang.NullPointerException: Cannot invoke "String.toLowerCase()" because "query" is null
+  at com.acme.search.SearchHandler.parseQuery(SearchHandler.java:88)
+  at com.acme.search.SearchHandler.handle(SearchHandler.java:51)
+  at com.acme.search.Router.dispatch(Router.java:142)
+ts=2026-06-16T08:16:58Z level=ERROR svc=search msg="unhandled exception serving GET /search" req_id=req-9a2213 query="" status=500 duration_ms=8
+java.lang.NullPointerException: Cannot invoke "String.toLowerCase()" because "query" is null
+  at com.acme.search.SearchHandler.parseQuery(SearchHandler.java:88)
+  at com.acme.search.SearchHandler.handle(SearchHandler.java:51)
+ts=2026-06-16T08:17:55Z level=ERROR svc=search msg="unhandled exception serving GET /search" req_id=req-9a2217 query="" status=500 duration_ms=8
+java.lang.NullPointerException: Cannot invoke "String.toLowerCase()" because "query" is null
+  at com.acme.search.SearchHandler.parseQuery(SearchHandler.java:88)
+ts=2026-06-16T08:19:10Z level=ERROR svc=search msg="unhandled exception serving GET /search" req_id=req-9a221b query="" status=500 duration_ms=7
+java.lang.NullPointerException: Cannot invoke "String.toLowerCase()" because "query" is null
+  at com.acme.search.SearchHandler.parseQuery(SearchHandler.java:88)
+ts=2026-06-16T08:22:42Z level=ERROR svc=search msg="unhandled exception serving GET /search" req_id=req-9a221d query="" status=500 duration_ms=8
+java.lang.NullPointerException: Cannot invoke "String.toLowerCase()" because "query" is null
+  at com.acme.search.SearchHandler.parseQuery(SearchHandler.java:88)
+ts=2026-06-16T08:27:38Z level=ERROR svc=search msg="unhandled exception serving GET /search" req_id=req-9a2221 query="" status=500 duration_ms=8
+java.lang.NullPointerException: Cannot invoke "String.toLowerCase()" because "query" is null
+  at com.acme.search.SearchHandler.parseQuery(SearchHandler.java:88)
+ts=2026-06-16T08:33:14Z level=ERROR svc=search msg="unhandled exception serving GET /search" req_id=req-9a2223 query="" status=500 duration_ms=7
+java.lang.NullPointerException: Cannot invoke "String.toLowerCase()" because "query" is null
+  at com.acme.search.SearchHandler.parseQuery(SearchHandler.java:88)
+ts=2026-06-16T08:38:52Z level=ERROR svc=search msg="unhandled exception serving GET /search" req_id=req-9a2227 query="" status=500 duration_ms=7
+java.lang.NullPointerException: Cannot invoke "String.toLowerCase()" because "query" is null
+  at com.acme.search.SearchHandler.parseQuery(SearchHandler.java:88)
+ts=2026-06-16T08:40:11Z level=INFO  svc=search msg="rolling back to image search:2026.06.15-r4 (revert dep-5b71)" component=deploy
+ts=2026-06-16T08:40:39Z level=INFO  svc=search msg="rollback complete; serving search:2026.06.15-r4" component=deploy rev=dep-5b71-revert
+ts=2026-06-16T08:40:55Z level=INFO  svc=search msg="GET /search" req_id=req-9a2229 query="" results=0 result=ok duration_ms=11 note="empty query -> emptyResults() (guard restored)"
+ts=2026-06-16T08:43:08Z level=INFO  svc=search msg="GET /search" req_id=req-9a222d query="phone case" results=37 result=ok duration_ms=54 note="error rate back to baseline"
+ts=2026-06-16T11:48:17Z level=INFO  svc=search msg="GET /search" req_id=req-9a2331 query="laptop stand" results=19 result=ok duration_ms=58
+ts=2026-06-16T15:12:44Z level=INFO  svc=search msg="GET /search" req_id=req-9a2435 query="bluetooth speaker" results=29 result=ok duration_ms=59 note="search healthy during checkout 504s"

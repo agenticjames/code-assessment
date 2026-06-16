@@ -1,0 +1,52 @@
+# Acme Checkout — full change/deploy history (CONTINUOUS).
+# Queried via get_changes(window, service?). All times UTC. Window: 2026-06-08 .. 2026-06-16.
+# This is the WHOLE history; an investigation slices it to its own window. Most days are calm —
+# the routine deploys are noise; the load-bearing changes are called out inline.
+
+changes:
+  # ---------- 2026-06-08 (calm) ----------
+  - {id: dep-a1c7, ts: 2026-06-08T10:12:00Z, service: recommendations, type: deploy, author: theo, status: deployed, summary: "reco model refresh v4.2"}
+  - {id: dep-a3f0, ts: 2026-06-08T16:48:00Z, service: search-index, type: deploy, author: theo, status: deployed, summary: "reindex schema bump"}
+
+  # ---------- 2026-06-09 (calm) ----------
+  - {id: dep-8c22, ts: 2026-06-09T09:40:00Z, service: checkout, type: deploy, author: raj, status: deployed, summary: "checkout v5.7 — cart-merge refactor"}
+    # ^ NOTE: this is the LAST checkout deploy in the whole window. It is 2+ days BEFORE the gradual
+    #   slowdown begins (see F), and the latency/heap trend does not step at this point — it creeps.
+  - {id: dep-2b40, ts: 2026-06-09T11:20:00Z, service: orders, type: deploy, author: dana, status: deployed, summary: "orders v3.18 — pagination fix; no change to the order-placement path"}
+    # ^ last change to `orders` before the C intermittent-500s (6 days prior, clean).
+
+  # ---------- 2026-06-10 (B: auth memory-limit cut -> OOM cascade) ----------
+  - {id: dep-2d71, ts: 2026-06-10T18:32:00Z, service: search, type: deploy, author: theo, status: deployed, summary: "search synonyms update"}
+  - {id: dep-6b04, ts: 2026-06-10T20:11:00Z, service: notifications, type: deploy, author: theo, status: deployed, summary: "email template tweak"}
+  - {id: dep-3a8c, ts: 2026-06-10T21:05:00Z, service: auth-service, type: config, author: lena, status: deployed, summary: "reduce pod memory limit 2Gi -> 1Gi (cost trim)"}
+    # ^ ROOT of the 06-10 alert storm. auth normally uses ~1.5Gi -> begins OOMKilling at 21:10.
+  - {id: dep-3a8c-revert, ts: 2026-06-10T21:28:00Z, service: auth-service, type: config, author: lena, status: rolled_back, reverts: dep-3a8c, summary: "revert dep-3a8c; restore 2Gi; stop the OOM/crashloop"}
+
+  # ---------- 2026-06-11 (calm — F slowdown becomes visible AFTER here, with NO deploy to explain it) ----------
+  - {id: dep-c0e5, ts: 2026-06-11T13:05:00Z, service: cdn, type: deploy, author: sam, status: deployed, summary: "cache rule update"}
+
+  # ---------- 2026-06-12 (D: traffic surge exhausts the shared redis pool) ----------
+  - {id: dep-1a44, ts: 2026-06-12T08:30:00Z, service: feature-flags, type: config, author: priya, status: deployed, summary: "enable promo-banner flag for the 10:00 campaign"}
+  - {id: dep-6e91, ts: 2026-06-12T09:15:00Z, service: recommendations, type: deploy, author: theo, status: deployed, summary: "promo carousel"}
+    # ^ NO code/config change CAUSES D — the 10:00 surge is a marketing/traffic event (see chat + alerts).
+
+  # ---------- 2026-06-13 (calm) ----------
+  - {id: dep-d4a9, ts: 2026-06-13T15:40:00Z, service: search, type: deploy, author: theo, status: deployed, summary: "relevance tuning"}
+
+  # ---------- 2026-06-14 (calm; ops rolling-restarts checkout ~03:00 — see logs — which briefly dents F's heap trend) ----------
+
+  # ---------- 2026-06-15 (C: intermittent 500s — NOTHING is deployed; that is the point) ----------
+  # (no changes on 2026-06-15)
+
+  # ---------- 2026-06-16 (E in the morning, A in the afternoon) ----------
+  - {id: dep-9c50, ts: 2026-06-16T07:50:00Z, service: cart, type: deploy, author: theo, status: deployed, summary: "cart UI polish"}
+  - {id: dep-5b71, ts: 2026-06-16T08:15:00Z, service: search, type: deploy, author: theo, status: deployed, diff: changes/dep-5b71.diff, summary: "search v2.9 — query-parser refactor"}
+    # ^ ROOT of the 06-16 MORNING search 500s (E). Regression: dropped a null/empty guard in parseQuery.
+  - {id: dep-5b71-revert, ts: 2026-06-16T08:40:00Z, service: search, type: deploy, author: theo, status: rolled_back, reverts: dep-5b71, summary: "revert dep-5b71; restore prior image; search error rate returned to baseline"}
+  - {id: dep-4c19, ts: 2026-06-16T09:14:00Z, service: recommendations, type: deploy, author: theo, status: deployed, summary: "reco ranking tweak"}
+  - {id: dep-9f33, ts: 2026-06-16T11:20:00Z, service: cdn, type: deploy, author: sam, status: deployed, summary: "static asset bundle"}
+  - {id: mig-0616, ts: 2026-06-16T14:00:00Z, service: orders-db, type: migration, author: dana, status: completed, completed_ts: 2026-06-16T14:12:00Z, summary: "add index idx_orders_customer on orders(customer_id)"}
+    # ^ A HERRING. Completed cleanly at 14:12. The afternoon 504s look DB-shaped but start at 14:47.
+  - {id: dep-7e2a, ts: 2026-06-16T14:45:00Z, service: rate-limiter, type: config, author: sam, status: deployed, diff: changes/dep-7e2a.diff, config: changes/rate-limiter.config.yaml, summary: "tighten throttle: max_tokens 100 -> 10"}
+    # ^ ROOT of the 06-16 AFTERNOON checkout 504s (A). Tighter buckets churn the SHARED redis pool to 50/50.
+  - {id: mig-0616-rollback, ts: 2026-06-16T14:52:00Z, service: orders-db, type: migration, author: dana, status: rolled_back, completed_ts: 2026-06-16T14:58:00Z, reverts: mig-0616, summary: "roll back idx_orders_customer — 504s PERSISTED afterward, so the migration was not the cause"}

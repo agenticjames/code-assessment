@@ -1,0 +1,10 @@
+id: B
+slug: alert-storm
+workspace: acme-checkout
+query: "we're getting paged by ~20 alerts, what's actually going on?"
+mode: live
+as_of: 2026-06-10T21:18:00Z      # mid-storm: OOM + downstream alerts have fired; lena's grouping
+                                 # insight (21:20) and the revert (21:28) are AFTER as_of → hidden.
+look_back: 30m
+severity: SEV1
+evidence: telemetry/

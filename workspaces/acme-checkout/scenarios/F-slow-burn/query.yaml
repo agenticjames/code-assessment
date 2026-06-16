@@ -1,0 +1,10 @@
+id: F
+slug: slow-burn
+workspace: acme-checkout
+query: "checkout has been getting slower over the past few days, no idea why"
+mode: live
+as_of: 2026-06-16T12:00:00Z      # midday 06-16 — deliberately BEFORE the 14:47 A spike, so checkout_p99
+                                 # shows F's clean multi-day creep, uncontaminated by the afternoon incident.
+look_back: 5d                    # the trend spans ~06-11 → 06-16
+severity: SEV3
+evidence: telemetry/

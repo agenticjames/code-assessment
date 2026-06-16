@@ -1,0 +1,65 @@
+2026-06-08T04:12:11Z method=POST path=/checkout status=200 upstream=checkout latency_ms=614 req_id=req-c00101 client=203.0.113.41
+2026-06-08T10:30:44Z method=GET  path=/api/search?q=running+shoes status=200 upstream=search latency_ms=60 req_id=req-7a0101 client=198.51.100.7
+2026-06-08T16:48:09Z method=GET  path=/api/recommendations status=200 upstream=recommendations latency_ms=54 req_id=req-a3f001 client=192.0.2.150
+2026-06-09T09:41:33Z method=POST path=/checkout status=200 upstream=checkout latency_ms=549 req_id=req-c00240 client=203.0.113.88
+2026-06-09T18:23:01Z method=GET  path=/api/orders status=200 upstream=orders latency_ms=52 req_id=or-1388 client=198.51.100.22
+2026-06-10T08:19:00Z method=POST path=/checkout status=200 upstream=checkout latency_ms=553 req_id=req-c00388 client=203.0.113.61
+2026-06-10T20:15:22Z method=GET  path=/api/search?q=coffee+maker status=200 upstream=search latency_ms=55 req_id=req-7a0388 client=192.0.2.9
+2026-06-10T21:11:13Z method=POST path=/checkout status=401 upstream=checkout latency_ms=2016 req_id=req-3c0a client=203.0.113.66 msg="upstream 401"
+2026-06-10T21:12:02Z method=POST path=/api/orders status=401 upstream=orders latency_ms=2013 req_id=or-8808 client=198.51.100.61 msg="upstream 401"
+2026-06-10T21:13:21Z method=GET  path=/api/search?q=desk+lamp status=401 upstream=search latency_ms=2010 req_id=req-7a0405 client=192.0.2.84 msg="upstream 401"
+2026-06-10T21:31:12Z method=POST path=/checkout status=200 upstream=checkout latency_ms=610 req_id=req-3c26 client=203.0.113.30 msg="recovered"
+2026-06-11T13:23:01Z method=POST path=/checkout status=200 upstream=checkout latency_ms=556 req_id=req-a10044 client=203.0.113.12
+2026-06-11T21:40:18Z method=GET  path=/api/cart status=200 upstream=cart latency_ms=41 req_id=req-ca1101 client=198.51.100.45
+2026-06-12T09:59:48Z method=POST path=/checkout status=200 upstream=checkout latency_ms=611 req_id=req-3c1003 client=203.0.113.77
+2026-06-12T10:01:45Z method=POST path=/checkout status=503 upstream=checkout latency_ms=3010 req_id=req-3c100d client=192.0.2.61 msg="upstream 503"
+2026-06-12T10:02:23Z method=POST path=/checkout status=503 upstream=checkout latency_ms=3008 req_id=req-3c1011 client=198.51.100.77 msg="upstream 503"
+2026-06-12T10:41:30Z method=POST path=/checkout status=200 upstream=checkout latency_ms=624 req_id=req-3c1030 client=203.0.113.91 msg="recovered"
+2026-06-12T16:42:09Z method=GET  path=/api/recommendations status=200 upstream=recommendations latency_ms=57 req_id=req-re1201 client=192.0.2.211
+2026-06-13T10:51:22Z method=POST path=/checkout status=200 upstream=checkout latency_ms=602 req_id=req-a10502 client=203.0.113.5
+2026-06-13T20:14:31Z method=GET  path=/api/search?q=phone+case status=200 upstream=search latency_ms=54 req_id=req-7a0703 client=198.51.100.90
+2026-06-14T03:00:55Z method=POST path=/checkout status=200 upstream=checkout latency_ms=512 req_id=req-c14001 client=203.0.113.19 msg="post-restart"
+2026-06-14T13:38:09Z method=GET  path=/api/cart status=200 upstream=cart latency_ms=44 req_id=req-ca1401 client=192.0.2.33
+2026-06-15T09:51:30Z method=POST path=/checkout status=200 upstream=checkout latency_ms=701 req_id=req-a10802 client=203.0.113.71
+2026-06-15T16:01:44Z method=GET  path=/api/orders/ord-51220 status=200 upstream=orders latency_ms=44 req_id=ord-3a01 client=203.0.113.18
+2026-06-15T16:03:09Z method=POST path=/api/orders status=200 upstream=orders latency_ms=148 req_id=ord-3a03 client=203.0.113.91
+2026-06-15T16:04:08Z method=POST path=/api/orders status=500 upstream=orders latency_ms=3009 req_id=ord-3a04 client=192.0.2.61 msg="upstream 500"
+2026-06-15T16:09:11Z method=GET  path=/api/orders/ord-51226 status=500 upstream=orders latency_ms=66 req_id=ord-3a08 client=198.51.100.5 msg="upstream 500"
+2026-06-15T16:11:18Z method=POST path=/api/orders status=500 upstream=orders latency_ms=3007 req_id=ord-3a0a client=192.0.2.88 msg="upstream 500"
+2026-06-15T16:14:27Z method=POST path=/api/orders status=200 upstream=orders latency_ms=158 req_id=ord-3a0c client=203.0.113.12
+2026-06-15T16:23:15Z method=GET  path=/api/orders/ord-51213/timeline status=500 upstream=orders latency_ms=3008 req_id=ord-3a11 client=198.51.100.118 msg="upstream 500"
+2026-06-15T16:31:07Z method=GET  path=/api/orders status=500 upstream=orders latency_ms=63 req_id=ord-3a16 client=192.0.2.198 msg="upstream 500"
+2026-06-15T16:35:12Z method=GET  path=/api/orders/ord-51244 status=200 upstream=orders latency_ms=40 req_id=ord-3a18 client=203.0.113.190
+2026-06-15T16:47:13Z method=POST path=/api/orders status=500 upstream=orders latency_ms=3010 req_id=ord-3a1e client=203.0.113.95 msg="upstream 500"
+2026-06-15T16:52:29Z method=GET  path=/api/orders/ord-51216/timeline status=500 upstream=orders latency_ms=3007 req_id=ord-3a21 client=203.0.113.29 msg="upstream 500"
+2026-06-15T16:59:48Z method=GET  path=/api/orders status=200 upstream=orders latency_ms=59 req_id=ord-3a24 client=203.0.113.41
+2026-06-16T08:12:04Z method=GET  path=/api/search?q=running+shoes status=200 upstream=search latency_ms=58 req_id=req-9a2201 client=198.51.100.7
+2026-06-16T08:15:51Z method=GET  path=/api/search?q=desk+lamp status=200 upstream=search latency_ms=57 req_id=req-9a220b client=192.0.2.150
+2026-06-16T08:16:08Z method=GET  path=/api/search status=500 upstream=search latency_ms=10 req_id=req-9a220d client=203.0.113.66 msg="upstream 500"
+2026-06-16T08:16:58Z method=GET  path=/api/search status=500 upstream=search latency_ms=9 req_id=req-9a2213 client=198.51.100.61 msg="upstream 500"
+2026-06-16T08:17:55Z method=GET  path=/api/search status=500 upstream=search latency_ms=9 req_id=req-9a2217 client=192.0.2.84 msg="upstream 500"
+2026-06-16T08:27:38Z method=GET  path=/api/search status=500 upstream=search latency_ms=9 req_id=req-9a2221 client=203.0.113.140 msg="upstream 500"
+2026-06-16T08:38:52Z method=GET  path=/api/search status=500 upstream=search latency_ms=8 req_id=req-9a2227 client=198.51.100.3 msg="upstream 500"
+2026-06-16T08:40:55Z method=GET  path=/api/search?q= status=200 upstream=search latency_ms=11 req_id=req-9a2229 client=192.0.2.176 msg="recovered"
+2026-06-16T08:43:08Z method=GET  path=/api/search?q=phone+case status=200 upstream=search latency_ms=54 req_id=req-9a222d client=203.0.113.23
+2026-06-16T11:20:51Z method=GET  path=/api/cdn/bundle.js status=200 upstream=cdn latency_ms=12 req_id=req-cd1601 client=198.51.100.118
+2026-06-16T14:44:11Z method=POST path=/checkout status=200 upstream=checkout latency_ms=612 req_id=req-7f3a01 client=203.0.113.88
+2026-06-16T14:45:15Z method=POST path=/checkout status=200 upstream=checkout latency_ms=634 req_id=req-7f3a09 client=203.0.113.77
+2026-06-16T14:46:55Z method=POST path=/checkout status=200 upstream=checkout latency_ms=842 req_id=req-7f3a0f client=203.0.113.19
+2026-06-16T14:47:08Z method=POST path=/checkout status=504 upstream=checkout latency_ms=5004 req_id=req-7f3a10 client=203.0.113.66 msg="upstream timeout"
+2026-06-16T14:47:21Z method=POST path=/checkout status=504 upstream=checkout latency_ms=5003 req_id=req-7f3a12 client=203.0.113.140 msg="upstream timeout"
+2026-06-16T14:47:35Z method=POST path=/checkout status=504 upstream=checkout latency_ms=5005 req_id=req-7f3a13 client=198.51.100.61 msg="upstream timeout"
+2026-06-16T14:47:50Z method=POST path=/checkout status=504 upstream=checkout latency_ms=5002 req_id=req-7f3a15 client=192.0.2.84 msg="upstream timeout"
+2026-06-16T14:48:03Z method=POST path=/checkout status=504 upstream=checkout latency_ms=5006 req_id=req-7f3a16 client=203.0.113.99 msg="upstream timeout"
+2026-06-16T14:48:19Z method=POST path=/checkout status=504 upstream=checkout latency_ms=5004 req_id=req-7f3a18 client=203.0.113.45 msg="upstream timeout"
+2026-06-16T14:48:34Z method=POST path=/checkout status=504 upstream=checkout latency_ms=5003 req_id=req-7f3a19 client=192.0.2.176 msg="upstream timeout"
+2026-06-16T14:49:17Z method=POST path=/checkout status=504 upstream=checkout latency_ms=5002 req_id=req-7f3a1c client=203.0.113.207 msg="upstream timeout"
+2026-06-16T14:50:01Z method=POST path=/checkout status=504 upstream=checkout latency_ms=5003 req_id=req-7f3a1f client=198.51.100.74 msg="upstream timeout"
+2026-06-16T14:51:22Z method=POST path=/checkout status=504 upstream=checkout latency_ms=5005 req_id=req-7f3a24 client=192.0.2.198 msg="upstream timeout"
+2026-06-16T14:52:04Z method=POST path=/checkout status=504 upstream=checkout latency_ms=5003 req_id=req-7f3a25 client=203.0.113.51 msg="upstream timeout"
+2026-06-16T14:53:11Z method=POST path=/checkout status=504 upstream=checkout latency_ms=5004 req_id=req-7f3a26 client=198.51.100.157 msg="upstream timeout"
+2026-06-16T14:55:39Z method=POST path=/checkout status=504 upstream=checkout latency_ms=5002 req_id=req-7f3a27 client=203.0.113.190 msg="upstream timeout"
+2026-06-16T15:01:55Z method=POST path=/checkout status=504 upstream=checkout latency_ms=5003 req_id=req-7f3a2a client=203.0.113.114 msg="upstream timeout"
+2026-06-16T15:09:07Z method=POST path=/checkout status=504 upstream=checkout latency_ms=5002 req_id=req-7f3a2d client=198.51.100.181 msg="upstream timeout"
+2026-06-16T15:18:19Z method=POST path=/checkout status=504 upstream=checkout latency_ms=5003 req_id=req-7f3a2f client=192.0.2.62 msg="upstream timeout"
+2026-06-16T15:24:51Z method=POST path=/checkout status=504 upstream=checkout latency_ms=5004 req_id=req-7f3a30 client=198.51.100.143 msg="upstream timeout"

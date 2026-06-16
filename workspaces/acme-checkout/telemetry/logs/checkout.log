@@ -1,0 +1,100 @@
+ts=2026-06-08T04:12:08Z level=INFO  svc=checkout msg="POST /checkout" req_id=req-c00101 order_id=ord-70010 amount=58.20 result=ok duration_ms=531
+ts=2026-06-08T15:40:31Z level=INFO  svc=checkout msg="POST /checkout" req_id=req-c00140 order_id=ord-70042 amount=129.99 result=ok duration_ms=548
+ts=2026-06-09T09:40:09Z level=INFO  svc=checkout msg="rolling update: serving checkout v5.7 (dep-8c22)" component=deploy note="cart-merge refactor"
+ts=2026-06-09T18:22:55Z level=INFO  svc=checkout msg="POST /checkout" req_id=req-c00240 order_id=ord-70140 amount=42.50 result=ok duration_ms=540
+ts=2026-06-10T08:18:33Z level=INFO  svc=checkout msg="POST /checkout" req_id=req-c00388 order_id=ord-70280 amount=88.40 result=ok duration_ms=552
+ts=2026-06-10T21:08:01Z level=INFO  svc=checkout msg="POST /checkout" req_id=req-3c03 order_id=ord-71205 amount=118.00 result=ok duration_ms=604
+ts=2026-06-10T21:08:44Z level=DEBUG svc=checkout msg="auth validate ok" req_id=req-3c03 upstream=auth-service duration_ms=8
+ts=2026-06-10T21:09:58Z level=INFO  svc=checkout msg="POST /checkout" req_id=req-3c07 order_id=ord-71207 amount=212.10 result=ok duration_ms=633
+ts=2026-06-10T21:10:51Z level=INFO  svc=checkout msg="POST /checkout" req_id=req-3c09 order_id=ord-71208 amount=88.40 result=ok duration_ms=2640 note="auth validate slow"
+ts=2026-06-10T21:11:03Z level=WARN  svc=checkout msg="auth validate slow" req_id=req-3c09 upstream=auth-service duration_ms=2310
+ts=2026-06-10T21:11:12Z level=ERROR svc=checkout msg="auth check timed out" req_id=req-3c0a upstream=auth-service timeout_ms=2000 op=POST_/checkout
+ts=2026-06-10T21:11:13Z level=ERROR svc=checkout msg="request aborted: token validation failed" req_id=req-3c0a status=401_unauthorized duration_ms=2014
+  at auth.client.validate(auth_client.go:71)
+  at checkout.authorizeBuyer(order.go:142)
+  at checkout.handlePost(handler.go:127)
+ts=2026-06-10T21:11:41Z level=DEBUG svc=checkout msg="redis conn acquired" req_id=req-3c0b pool_wait_ms=3 conn_id=c-81 note="redis healthy; not the bottleneck"
+ts=2026-06-10T21:11:42Z level=ERROR svc=checkout msg="401 from auth-service" req_id=req-3c0b upstream=auth-service status=401 op=POST_/checkout
+ts=2026-06-10T21:12:58Z level=DEBUG svc=checkout msg="orders-db query ok" req_id=health-90 stmt="SELECT 1" duration_ms=4 component=db-client note="db healthy"
+ts=2026-06-10T21:13:14Z level=ERROR svc=checkout msg="auth check timed out" req_id=req-3c10 upstream=auth-service timeout_ms=2000 op=POST_/checkout
+ts=2026-06-10T21:15:05Z level=ERROR svc=checkout msg="auth check timed out" req_id=req-3c16 upstream=auth-service timeout_ms=2000 op=POST_/checkout
+ts=2026-06-10T21:18:44Z level=ERROR svc=checkout msg="401 from auth-service" req_id=req-3c1c upstream=auth-service status=401 op=POST_/checkout
+ts=2026-06-10T21:25:18Z level=ERROR svc=checkout msg="auth check timed out" req_id=req-3c22 upstream=auth-service timeout_ms=2000 op=POST_/checkout
+ts=2026-06-10T21:31:12Z level=INFO  svc=checkout msg="auth validate ok" req_id=req-3c26 upstream=auth-service duration_ms=9 note="auth-service stabilized"
+ts=2026-06-10T21:35:33Z level=INFO  svc=checkout msg="5xx rate back to baseline" component=server note="recovered as auth-service recovered"
+ts=2026-06-11T07:48:31Z level=WARN  svc=checkout msg="GC pause" collector=G1 duration_ms=118 heap_used_pct=43 component=jvm
+ts=2026-06-11T13:22:55Z level=INFO  svc=checkout msg="POST /checkout" req_id=req-a10044 order_id=ord-71402 amount=64.30 result=ok duration_ms=548
+ts=2026-06-11T19:05:12Z level=WARN  svc=checkout msg="GC pause" collector=G1 duration_ms=131 heap_used_pct=45 component=jvm
+ts=2026-06-12T05:33:09Z level=WARN  svc=checkout msg="GC pause" collector=G1 duration_ms=156 heap_used_pct=49 component=jvm
+ts=2026-06-12T09:59:41Z level=INFO  svc=checkout msg="POST /checkout" req_id=req-3c1003 order_id=ord-71205 amount=112.00 result=ok duration_ms=604
+ts=2026-06-12T10:00:18Z level=INFO  svc=checkout msg="request volume rising" rps=412 baseline_rps=80 note="inbound traffic well above normal"
+ts=2026-06-12T10:00:51Z level=INFO  svc=checkout msg="POST /checkout" req_id=req-3c1009 order_id=ord-71208 amount=205.30 result=ok duration_ms=689
+ts=2026-06-12T10:01:04Z level=DEBUG svc=checkout msg="redis conn acquired" req_id=req-3c1009 pool_wait_ms=142 conn_id=c-377
+ts=2026-06-12T10:01:31Z level=WARN  svc=checkout msg="redis pool busy: all connections in use, waiting" req_id=req-3c100d pool_wait_ms=1450 component=conn-pool
+ts=2026-06-12T10:01:44Z level=ERROR svc=checkout msg="couldn't get a connection from the pool" req_id=req-3c100d component=conn-pool op=POST_/checkout note="pool maxed out"
+ts=2026-06-12T10:01:45Z level=ERROR svc=checkout msg="order failed: no redis connection available" req_id=req-3c100d status=503_internal duration_ms=3008
+  at conn.pool.acquire(pool.go:214)
+  at redis.client.withConn(client.go:88)
+  at checkout.placeOrder(order.go:355)
+  at checkout.handlePost(handler.go:127)
+ts=2026-06-12T10:02:06Z level=ERROR svc=checkout msg="connection refused by redis (10.4.2.7:6379)" req_id=req-3c100f component=redis-client op=POST_/checkout
+ts=2026-06-12T10:02:23Z level=ERROR svc=checkout msg="couldn't get a connection from the pool" req_id=req-3c1011 component=conn-pool op=POST_/checkout note="pool maxed out"
+ts=2026-06-12T10:03:30Z level=ERROR svc=checkout msg="couldn't get a connection from the pool" req_id=req-3c1017 component=conn-pool op=POST_/checkout note="pool maxed out"
+ts=2026-06-12T10:04:09Z level=DEBUG svc=checkout msg="orders-db query ok" req_id=health-118 stmt="SELECT 1" duration_ms=4 component=db-client note="db healthy; not the bottleneck"
+ts=2026-06-12T10:06:49Z level=ERROR svc=checkout msg="couldn't get a connection from the pool" req_id=req-3c1021 component=conn-pool op=POST_/checkout
+ts=2026-06-12T10:11:28Z level=ERROR svc=checkout msg="couldn't get a connection from the pool" req_id=req-3c1027 component=conn-pool op=POST_/checkout
+ts=2026-06-12T10:40:55Z level=INFO  svc=checkout msg="redis conn acquired" req_id=req-3c1030 pool_wait_ms=4 conn_id=c-391 note="pool recovered after load shed"
+ts=2026-06-12T10:41:30Z level=INFO  svc=checkout msg="5xx rate back to baseline" component=server note="surge subsided"
+ts=2026-06-12T16:42:01Z level=WARN  svc=checkout msg="GC pause" collector=G1 duration_ms=172 heap_used_pct=52 component=jvm
+ts=2026-06-12T22:07:38Z level=WARN  svc=checkout msg="GC pause" collector=G1 duration_ms=188 heap_used_pct=53 component=jvm
+ts=2026-06-13T04:29:55Z level=WARN  svc=checkout msg="GC pause" collector=G1 duration_ms=224 heap_used_pct=57 component=jvm
+ts=2026-06-13T10:51:13Z level=WARN  svc=checkout msg="GC pause" collector=G1 duration_ms=248 heap_used_pct=59 component=jvm
+ts=2026-06-13T20:14:22Z level=WARN  svc=checkout msg="GC pause" collector=G1 duration_ms=271 heap_used_pct=62 component=jvm
+ts=2026-06-13T23:58:50Z level=WARN  svc=checkout msg="GC pause exceeded soft target (200ms)" collector=G1 duration_ms=289 heap_used_pct=63 component=jvm
+ts=2026-06-14T02:41:17Z level=WARN  svc=checkout msg="GC pause" collector=G1 duration_ms=318 heap_used_pct=66 component=jvm
+ts=2026-06-14T03:00:11Z level=INFO  svc=checkout msg="pod checkout-7b9c5d8f4-q2x7 restarted (manual rollout restart by sam); heap reset" component=k8s
+ts=2026-06-14T03:01:40Z level=INFO  svc=checkout msg="heap after GC" heap_used_pct=39 component=jvm note="post-restart baseline"
+ts=2026-06-14T09:37:55Z level=WARN  svc=checkout msg="GC pause" collector=G1 duration_ms=149 heap_used_pct=46 component=jvm note="lower after restart"
+ts=2026-06-14T19:12:08Z level=WARN  svc=checkout msg="GC pause" collector=G1 duration_ms=178 heap_used_pct=51 component=jvm
+ts=2026-06-14T23:44:31Z level=WARN  svc=checkout msg="GC pause" collector=G1 duration_ms=206 heap_used_pct=55 component=jvm note="climbing again"
+ts=2026-06-15T04:18:50Z level=WARN  svc=checkout msg="GC pause" collector=G1 duration_ms=302 heap_used_pct=61 component=jvm
+ts=2026-06-15T09:51:22Z level=WARN  svc=checkout msg="GC pause" collector=G1 duration_ms=388 heap_used_pct=66 component=jvm
+ts=2026-06-15T14:33:47Z level=INFO  svc=checkout msg="POST /checkout" req_id=req-a10901 order_id=ord-72820 amount=143.20 result=ok duration_ms=701
+ts=2026-06-15T18:05:14Z level=WARN  svc=checkout msg="GC pause" collector=G1 duration_ms=472 heap_used_pct=71 component=jvm
+ts=2026-06-15T21:39:58Z level=WARN  svc=checkout msg="GC pause exceeded soft target (200ms)" collector=G1 duration_ms=561 heap_used_pct=74 component=jvm
+ts=2026-06-16T01:22:40Z level=WARN  svc=checkout msg="GC pause" collector=G1 duration_ms=688 heap_used_pct=79 component=jvm
+ts=2026-06-16T05:14:55Z level=WARN  svc=checkout msg="GC pause" collector=G1 duration_ms=806 heap_used_pct=83 component=jvm
+ts=2026-06-16T07:30:02Z level=WARN  svc=checkout msg="long GC pause; request latency impacted" collector=G1 duration_ms=903 heap_used_pct=85 component=jvm
+ts=2026-06-16T11:25:18Z level=WARN  svc=checkout msg="GC pause" collector=G1 duration_ms=861 heap_used_pct=86 component=jvm note="p99 creeping; no deploy"
+ts=2026-06-16T14:43:51Z level=INFO  svc=checkout msg="POST /checkout" req_id=req-7f3a01 order_id=ord-99812 amount=84.20 result=ok duration_ms=612
+ts=2026-06-16T14:44:26Z level=INFO  svc=checkout msg="POST /checkout" req_id=req-7f3a05 order_id=ord-99814 amount=42.50 result=ok duration_ms=588
+ts=2026-06-16T14:45:14Z level=INFO  svc=checkout msg="POST /checkout" req_id=req-7f3a09 order_id=ord-99816 amount=58.75 result=ok duration_ms=634
+ts=2026-06-16T14:46:23Z level=INFO  svc=checkout msg="POST /checkout" req_id=req-7f3a0d order_id=ord-99818 amount=19.99 result=ok duration_ms=701
+ts=2026-06-16T14:46:54Z level=WARN  svc=checkout msg="POST /checkout" req_id=req-7f3a0f order_id=ord-99819 amount=145.00 result=ok duration_ms=842 note="pool_wait elevated"
+ts=2026-06-16T14:46:55Z level=DEBUG svc=checkout msg="redis conn acquired" req_id=req-7f3a0f pool_wait_ms=389 conn_id=c-241
+ts=2026-06-16T14:47:06Z level=INFO  svc=checkout msg="orders-db migration mig-0616 reported COMPLETE upstream at 14:12; schema cache refreshed" component=db-client
+ts=2026-06-16T14:47:08Z level=ERROR svc=checkout msg="timeout acquiring connection from pool after 5000ms" req_id=req-7f3a10 component=conn-pool op=POST_/checkout
+ts=2026-06-16T14:47:08Z level=ERROR svc=checkout msg="request aborted: could not obtain connection" req_id=req-7f3a10 status=503_internal duration_ms=5004
+  at conn.pool.acquire(pool.go:214)
+  at redis.client.withConn(client.go:88)
+  at checkout.placeOrder(order.go:355)
+  at checkout.handlePost(handler.go:127)
+ts=2026-06-16T14:47:22Z level=DEBUG svc=checkout msg="pool stats" in_use=? idle=0 wait_queue_depth=37 note="acquire backing off"
+ts=2026-06-16T14:47:35Z level=ERROR svc=checkout msg="timeout acquiring connection from pool after 5000ms" req_id=req-7f3a13 component=conn-pool op=POST_/checkout
+ts=2026-06-16T14:47:49Z level=INFO  svc=checkout msg="payment-gateway healthcheck ok" latency_ms=88 component=payment-client
+ts=2026-06-16T14:47:50Z level=ERROR svc=checkout msg="timeout acquiring connection from pool after 5000ms" req_id=req-7f3a15 component=conn-pool op=POST_/checkout
+ts=2026-06-16T14:48:04Z level=WARN  svc=checkout msg="wait_queue growing; handlers blocked on conn acquire" wait_queue_depth=52 component=conn-pool
+ts=2026-06-16T14:48:18Z level=DEBUG svc=checkout msg="orders-db query ok" req_id=health-204 stmt="SELECT 1" duration_ms=4 component=db-client note="db healthy"
+ts=2026-06-16T14:48:19Z level=ERROR svc=checkout msg="timeout acquiring connection from pool after 5000ms" req_id=req-7f3a18 component=conn-pool op=POST_/checkout
+ts=2026-06-16T14:48:34Z level=ERROR svc=checkout msg="timeout acquiring connection from pool after 5000ms" req_id=req-7f3a19 component=conn-pool op=POST_/checkout
+ts=2026-06-16T14:49:16Z level=ERROR svc=checkout msg="timeout acquiring connection from pool after 5000ms" req_id=req-7f3a1c component=conn-pool op=POST_/checkout
+ts=2026-06-16T14:50:00Z level=ERROR svc=checkout msg="timeout acquiring connection from pool after 5000ms" req_id=req-7f3a1f component=conn-pool op=POST_/checkout
+ts=2026-06-16T14:51:21Z level=ERROR svc=checkout msg="timeout acquiring connection from pool after 5000ms" req_id=req-7f3a24 component=conn-pool op=POST_/checkout
+ts=2026-06-16T14:52:03Z level=ERROR svc=checkout msg="timeout acquiring connection from pool after 5000ms" req_id=req-7f3a25 component=conn-pool op=POST_/checkout
+ts=2026-06-16T14:53:10Z level=ERROR svc=checkout msg="timeout acquiring connection from pool after 5000ms" req_id=req-7f3a26 component=conn-pool op=POST_/checkout
+ts=2026-06-16T14:59:02Z level=INFO  svc=checkout msg="orders-db migration mig-0616 rollback reported COMPLETE upstream at 14:58; schema cache refreshed" component=db-client note="504s persist after rollback"
+ts=2026-06-16T15:01:54Z level=ERROR svc=checkout msg="timeout acquiring connection from pool after 5000ms" req_id=req-7f3a2a component=conn-pool op=POST_/checkout
+ts=2026-06-16T15:09:06Z level=ERROR svc=checkout msg="timeout acquiring connection from pool after 5000ms" req_id=req-7f3a2d component=conn-pool op=POST_/checkout
+ts=2026-06-16T15:09:07Z level=DEBUG svc=checkout msg="orders-db query ok" req_id=health-251 stmt="SELECT 1" duration_ms=5 component=db-client note="db healthy throughout"
+ts=2026-06-16T15:18:18Z level=ERROR svc=checkout msg="timeout acquiring connection from pool after 5000ms" req_id=req-7f3a2f component=conn-pool op=POST_/checkout
+ts=2026-06-16T15:24:50Z level=ERROR svc=checkout msg="timeout acquiring connection from pool after 5000ms" req_id=req-7f3a30 component=conn-pool op=POST_/checkout

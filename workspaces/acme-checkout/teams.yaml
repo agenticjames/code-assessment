@@ -1,0 +1,56 @@
+# Ownership, on-call, and escalation.
+# The service->team mapping mirrors the `owner` fields in topology/services.yaml exactly.
+
+teams:
+  team-payments:
+    services: [checkout, payment-gateway]
+    slack: "#team-payments"
+    oncall: raj
+    escalation: [raj, mei]
+    pagerduty: payments-primary
+  team-platform:
+    services: [api-gateway, cdn, rate-limiter, feature-flags, redis]
+    slack: "#team-platform"
+    oncall: priya
+    secondary: sam            # SRE
+    escalation: [priya, sam, mei]
+    pagerduty: platform-primary
+  team-identity:
+    services: [auth-service, sessions-store, user-profile]
+    slack: "#team-identity"
+    oncall: lena
+    escalation: [lena, mei]
+    pagerduty: identity-primary
+  team-data:
+    services: [orders, orders-db, kafka, inventory]
+    slack: "#team-data"
+    oncall: dana
+    escalation: [dana, mei]
+    pagerduty: data-primary
+  team-growth:
+    services: [cart, search, recommendations, notifications, search-index, email-provider]
+    slack: "#team-growth"
+    oncall: theo
+    escalation: [theo, mei]
+    pagerduty: growth-primary
+  team-fulfillment:
+    services: [shipping-api]
+    slack: "#team-fulfillment"
+    oncall: nina
+    escalation: [nina, mei]
+    pagerduty: fulfillment-primary
+
+people:
+  raj:   { team: team-payments,    role: "Senior SWE" }
+  priya: { team: team-platform,    role: "Staff SWE" }
+  sam:   { team: team-platform,    role: "SRE" }
+  lena:  { team: team-identity,    role: "SWE" }
+  dana:  { team: team-data,        role: "SWE / DB on-call" }
+  theo:  { team: team-growth,      role: "SWE" }
+  nina:  { team: team-fulfillment, role: "SWE" }
+  mei:   { team: incident-response, role: "Incident Commander" }
+
+incident_response:
+  commander: mei
+  war_room: "#incidents"
+  severity_definitions: slos.yaml   # see `severities:`
