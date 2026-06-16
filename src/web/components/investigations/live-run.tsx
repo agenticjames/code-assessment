@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef } from "react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEventStream } from "@/hooks/use-event-stream";
@@ -46,7 +47,21 @@ const TRACE_TYPES = new Set([
  * run's current view (status / verdict / grounding / trace).
  */
 export function LiveRun({ initial }: { initial: LiveRunInitial }) {
+  const router = useRouter();
   const { events, done } = useEventStream(initial.id, true);
+
+  // The comms-pass panels (customer impact / status correction) live on the ledger and are read ONCE
+  // by the RSC at page-load — they are NOT carried in the trace stream. If we opened the page mid-run,
+  // that snapshot has no impact yet, so refresh the RSC once the run finishes to pull them in (rather
+  // than forcing a manual reload). A page opened on an already-finished run already has them.
+  const loadedLive = initial.status === "queued" || initial.status === "running";
+  const refreshed = useRef(false);
+  useEffect(() => {
+    if (done && loadedLive && !refreshed.current) {
+      refreshed.current = true;
+      router.refresh();
+    }
+  }, [done, loadedLive, router]);
 
   const run = useMemo(() => {
     let status = initial.status;
