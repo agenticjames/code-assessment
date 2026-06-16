@@ -1,12 +1,7 @@
-"""One job's lifecycle (docs/PHASE2.md §1): claim -> run the engine -> persist + stream terminal state.
-
-``investigate_fn`` is injectable: the real ``orchestrator.investigate`` in production, the fake in
-tests and in ``BIGGY_FAKE_RUN`` demo mode. The interface is ``fn(config, tracer, cancel_check)``.
-"""
+"""One job's lifecycle (docs/PHASE2.md §1): claim -> run the engine -> persist + stream terminal state."""
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from datetime import datetime, timezone
 from typing import Any
 
@@ -27,23 +22,10 @@ from biggy.worker.contracts import (
 from biggy.worker.sink import RedisPgSink
 
 
-def _default_investigate(
-    config: RunConfig, tracer: Tracer, cancel_check: Callable[[], bool]
-):
-    # Wrapper so cancel_check lands on the right keyword (orchestrator's 3rd positional is `pipeline`).
+def run_job(job: Job, db: Any, redis_conn: Any) -> None:
+    # Lazy import keeps the worker module light and dodges any engine import cycle.
     from biggy.engine.orchestrator import investigate
 
-    return investigate(config, tracer=tracer, cancel_check=cancel_check)
-
-
-def run_job(
-    job: Job,
-    db: Any,
-    redis_conn: Any,
-    *,
-    investigate_fn: Callable[..., Any] | None = None,
-) -> None:
-    investigate_fn = investigate_fn or _default_investigate
     sink = RedisPgSink(redis_conn, db, job.id)
 
     if not db.claim(job.id):
@@ -64,7 +46,9 @@ def run_job(
         max_steps=job.max_steps,
     )
     try:
-        result, ledger = investigate_fn(config, Tracer(sink=sink), cancel_check)
+        result, ledger = investigate(
+            config, tracer=Tracer(sink=sink), cancel_check=cancel_check
+        )
         db.finish(job.id, result, ledger, started_at=started)
         sink.emit(EVENT_DONE, {"status": STATUS_SUCCEEDED})
     except InvestigationCancelled:

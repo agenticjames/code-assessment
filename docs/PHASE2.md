@@ -191,8 +191,7 @@ src/cli/biggy/
     redis_io.py    XREADGROUP claim · XACK · XADD trace:{id} (MAXLEN/TTL) · cancel:{id} · ensure group
     db.py          psycopg writer: create/claim/finish/fail/cancel · batch tool_calls + citations
     sink.py        RedisPgSink(TraceSink): one emit() → XADD (live) + INSERT trace_events (durable)
-    runner.py      one job's lifecycle; takes an INJECTABLE `investigate` (real | fake for tests)
-    fake.py        FakeRun — replays the committed sample ledger as timed events (keyless demo/e2e)
+    runner.py      one job's lifecycle: claim -> run engine -> persist + stream terminal state
 
 src/web/
   lib/
@@ -269,7 +268,7 @@ with `cli/render.py` so behavior can't drift:
 ## 7. Phases (each ends demoable; tracked as tasks; check off in §11)
 
 Vertical slices — a thin end-to-end thread lands at P4, then enriches. The static briefing UI
-parallelizes from P2 against the committed sample ledger ([`docs/sample-run/ledger.json`](sample-run/ledger.json)).
+parallelizes from P2 against a static briefing fixture.
 
 - **P0 — Foundations & contracts.** docker-compose (have it); `.env.example`; `lib/env.ts`;
   `lib/contracts.ts` ↔ `worker/contracts.py` + a parity test vs `trace.py` `EVENT_*`; web deps
@@ -282,12 +281,12 @@ parallelizes from P2 against the committed sample ledger ([`docs/sample-run/ledg
 - **P2 — Persistence.** Drizzle `schema.ts` + generated migration; `worker/db.py` writer;
   `lib/db/queries.ts` reads. *(Parallel: build static briefing components vs the sample ledger.)*
   **Done:** migration applies to compose Postgres; a worker-db round-trip test passes.
-- **P3 — Worker.** `redis_io` (consumer group), `sink` (RedisPgSink), `runner` (lifecycle, injectable
-  investigate), `fake.py`, `__main__`. Failure/cancel handled; idempotent claim.
-  **Done:** offline fake-run drives PG rows + stream events + terminal `done`; `python -m biggy.worker` boots on compose.
+- **P3 — Worker.** `redis_io` (consumer group), `sink` (RedisPgSink), `runner` (lifecycle),
+  `__main__`. Failure/cancel handled; idempotent claim.
+  **Done:** the worker drives PG rows + stream events + terminal `done`; `python -m biggy.worker` boots on compose.
 - **P4 — Walking skeleton (e2e, poll).** `actions.createInvestigation` (INSERT+XADD); list page
   (composer + table); detail RSC renders the finished briefing by poll (no SSE yet).
-  **Done (Inc 6):** browser trigger → worker (fake) runs → briefing renders.
+  **Done (Inc 6):** browser trigger → worker runs → briefing renders.
 - **P5 — Live trace (SSE).** SSE route (replay+tail); `use-event-stream`; `live-run` reducer;
   `trace-panel` + `trace-event-item`; `run-tabs`; confidence bars animate.
   **Done (Inc 7):** trigger → watch it reason live → briefing resolves; reload mid-run replays.
@@ -308,7 +307,7 @@ parallelizes from P2 against the committed sample ledger ([`docs/sample-run/ledg
 ```
 # infra
 docker compose up -d                        # redis :6380, postgres :5433 (compose maps host ports)
-cp .env.example .env                         # set GEMINI_API_KEY (optional: BIGGY_FAKE_RUN=1 for keyless demo)
+cp .env.example .env                         # set GEMINI_API_KEY (see .env.example)
 # engine + worker (editable install with the worker extra)
 src/cli/.venv/Scripts/python -m pip install -e "src/cli[worker]"
 src/cli/.venv/Scripts/python -m biggy.worker # consumes biggy:jobs
@@ -325,8 +324,15 @@ a single worker; web CI (added opportunistically).
 ## 10. Risks & decisions
 - **Two-language schema drift** → keep the job payload tiny; worker validates incoming jobs with
   Pydantic; a test asserts TS event types == `trace.py` `EVENT_*`. This doc is the single source.
-- **No offline LLM stub** → worker/API tests use an **injectable fake `investigate`** + compose
-  services; live Gemini is a manual P5/P8 smoke (skipped without a key, like the engine tests).
+- **No offline LLM stub** → the engine always calls a real provider; the LLM phases are unit-tested
+  with a scripted `FakeLLM` (`tests/_fakes.py`), and live Gemini is a manual P5/P8 smoke (skipped
+  without a key, like the engine tests).
+- **LLM resilience** → the client (`engine/llm/client.py`) retries transient provider errors
+  (429/5xx/timeouts, exponential backoff + jitter) and repairs schema-violating structured output
+  (re-prompt with the validation error, bounded budget) — so a single transient blip no longer
+  fails a whole investigation. **Known productionization gaps** (deliberately out of scope here):
+  no **job-level retry / dead-letter queue** (an exhausted run is marked failed, not requeued), no
+  **circuit breaker** or **provider failover**, and retries are **in-process** to the single worker.
 - **SSE needs Node-server mode** (`next start`/`next dev`), not edge/serverless. Deploy accordingly.
 - **Status color** lacks a token (only `--destructive`) → add `--success/--warning/--info`; status
   surfaces are token-driven, never per-component hex.
@@ -337,7 +343,7 @@ a single worker; web CI (added opportunistically).
 - [x] P0 — Foundations & contracts — compose healthy; contracts.ts ↔ worker/contracts.py (parity test) + zod v4; web deps + worker extra installed; 6 shadcn primitives added; `--success/--warning/--info` tokens; tsc clean.
 - [x] P1 — Engine trace seam — `tool_result`/`verdict` emits + `should_cancel` hook; offline seam test (FakeLLM); CLI byte-unchanged; 25 pytest green.
 - [x] P2 — Persistence (Postgres) — Drizzle schema applied (`db:push`); `worker/db.py` writer; `lib/db/queries.ts`; worker-db round-trip test green against compose Postgres.
-- [x] P3 — Worker — redis_io (consumer group + blocking claim) · RedisPgSink · runner (injectable investigate) · fake.py (real vault + verifier) · `python -m biggy.worker`; offline e2e tests green.
+- [x] P3 — Worker — redis_io (consumer group + blocking claim) · RedisPgSink · runner (job lifecycle) · `python -m biggy.worker`; boots on compose, e2e verified in-browser (P4).
 - [x] P4 — Walking skeleton (e2e, poll) — composer + server action (INSERT+XADD) · RSC list/detail · briefing tree (mirrors render.py) · shared atoms. Verified in-browser: trigger → worker → grounded briefing (✓3/3) + history row.
 - [x] P5 — Live trace (SSE) — `/events` route (replay PG → tail Redis, Last-Event-ID) · `use-event-stream` · `LiveRun` reducer · trace panel + tabs. Verified in-browser: full streamed timeline + briefing resolve, no polling.
 - [x] P6 — Tangible grounding (citations → source) — `/api/source` (access-bounded vault read) · source-viewer Sheet + context · interactive citation chips · tool-call audit tab. Verified in-browser: citation → diff at the cited line.

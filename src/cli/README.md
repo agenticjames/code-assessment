@@ -9,8 +9,7 @@ evidence** to the incident window (clamped to `as_of` — no hindsight), runs a 
 (**hypothesize → test/disconfirm → adjudicate**) over read-only evidence tools, then a **deterministic
 citation verifier** re-opens every cited source and confirms the quote is real. The output is a
 grounded briefing with line-anchored citations and an `N/N verified` badge, plus a `ledger.json`.
-`biggy eval` scores the engine across scenarios against hidden answer keys. See a recorded run in
-[`../../docs/sample-run/`](../../docs/sample-run).
+`biggy eval` scores the engine across scenarios against hidden answer keys.
 
 ## Requirements
 

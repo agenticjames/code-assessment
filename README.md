@@ -10,7 +10,7 @@ its source by deterministic code. See [`docs/DESIGN.md`](docs/DESIGN.md) for the
 
 ```
 biggy/
-├─ docs/          # design · architecture · delivery plan · dataset · a recorded sample run
+├─ docs/          # design · architecture · delivery plan · dataset
 ├─ workspaces/    # the data vault — acme-checkout (topology, runbooks, telemetry, scenarios)
 └─ src/
    ├─ cli/        # Python: the investigation engine + `biggy` CLI (Phase 1) — see src/cli/README.md
@@ -33,8 +33,7 @@ pip install -e ".[dev]"
 biggy investigate "checkout is throwing 504s and customers are complaining" -s A --check
 ```
 
-A recorded run is in [`docs/sample-run/`](docs/sample-run); the full guide is
-[`src/cli/README.md`](src/cli/README.md).
+The full guide is [`src/cli/README.md`](src/cli/README.md).
 
 ## Quick start — the web app (Phase 2)
 
@@ -43,7 +42,7 @@ Python worker. Architecture + build plan: [`docs/PHASE2.md`](docs/PHASE2.md).
 
 ```bash
 docker compose up -d                                 # Redis :6380 + Postgres :5433 (healthchecked)
-cp .env.example .env                                  # set GEMINI_API_KEY — or BIGGY_FAKE_RUN=1 for a keyless demo
+cp .env.example .env                                  # set GEMINI_API_KEY (see .env.example)
 pip install -e "src/cli[worker]"                      # engine + worker deps (redis, psycopg)
 pnpm -C src/web install && pnpm -C src/web db:push    # apply the Drizzle schema
 python -m biggy.worker                                # terminal 1: consume biggy:jobs
