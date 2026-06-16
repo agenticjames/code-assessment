@@ -31,7 +31,7 @@ and `result_json`, so everything flows through the path you already have.
 | 2 | **No "absence" citations.** Missing/empty data goes to `open_questions`, never a fake citation. | Invisible (cleaner grounding numbers). |
 | 3 | **Stakeholder note.** New `stakeholder_note` — a paste-ready responder update. | **New panel** (done). |
 | 4 | **Confidence capped at 0.95.** A triage first-pass never claims 100%. | **Visible:** confidence bars now max at ~95%, never a full/100% bar. |
-| 5 | Regenerated the canonical sample run (`docs/sample-run/`). | n/a (CLI artifact). |
+| 5 | Regenerated the canonical sample run. | n/a (CLI artifact). |
 | 6 | **Noise dropped.** New `noise_dropped[]` — signals considered then dismissed (e.g. a chronic disk alert). | **New panel** (done). |
 
 ---
@@ -104,11 +104,8 @@ Open it → **Briefing** tab → you'll see the Noise dropped + Stakeholder upda
 (Verified rendering: stakeholder note, recommended action, and noise panels all present; 2 clean
 hypothesis cards.)
 
-To generate **fresh** runs with the fields:
-- **Keyless:** run the worker with `BIGGY_FAKE_RUN=1` and trigger Scenario A from the composer. (The
-  fake — `src/cli/biggy/worker/fake.py` — now includes a stakeholder note + a disk-alert noise item.)
-  Restart the worker process first so it picks up the updated fake.
-- **Real model:** trigger any scenario with a Gemini key; the live engine produces all fields.
+To generate **fresh** runs with the fields: trigger any scenario with a Gemini key; the live engine
+produces all fields.
 
 > Note: runs created **before** this change (e.g. the two ~50-min-old ones in your history) will show
 > **no** new panels — that's the backward-compat path working, not a bug.
@@ -127,8 +124,6 @@ To generate **fresh** runs with the fields:
 - `src/cli/biggy/engine/prompts/adjudicate.md` — folding rule, no-absence rule, 0.95 cap, note + noise.
 - `src/cli/biggy/engine/phases/adjudicate.py` — deterministic 0.95 confidence clamp.
 - `src/cli/biggy/cli/render.py` — CLI panels (kept in parity with the web).
-- `src/cli/biggy/worker/fake.py` — demo verdict now carries the new fields.
-- `docs/sample-run/` — regenerated canonical run.
 
 **Verification done:** web `tsc --noEmit` ✓, eslint ✓ on changed files; CLI ruff ✓, 32/32 engine
 tests ✓ (one unrelated pre-existing failure for an in-progress `--json` flag, not from this work); live

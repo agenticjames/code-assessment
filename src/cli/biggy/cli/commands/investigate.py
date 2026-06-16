@@ -69,11 +69,11 @@ def investigate(
     from dotenv import find_dotenv, load_dotenv
 
     from biggy.engine.config import RunConfig
-    from biggy.engine.llm.client import ensure_google_key
-    from biggy.engine.orchestrator import investigate as run_investigation
     from biggy.cli.render import render
 
     load_dotenv(find_dotenv(usecwd=True))
+    from biggy.engine.llm.client import ensure_google_key
+
     ensure_google_key()
     if not os.environ.get("GOOGLE_API_KEY"):
         _err.print(
@@ -95,6 +95,8 @@ def investigate(
     )
 
     try:
+        from biggy.engine.orchestrator import investigate as run_investigation
+
         result, ledger = run_investigation(config)
     except (FileNotFoundError, ValueError) as exc:
         _err.print(f"[red]{exc}[/]")

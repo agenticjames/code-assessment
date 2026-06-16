@@ -10,7 +10,7 @@ COPY workspaces/ /app/workspaces/
 RUN pip install --no-cache-dir -e "/app/src/cli[worker]"
 
 # The vault the engine + source/topology tools read. DATABASE_URL / REDIS_URL / GEMINI_API_KEY
-# (or BIGGY_FAKE_RUN=1) are supplied by the environment (e.g. Railway service variables).
+# are supplied by the environment (e.g. Railway service variables).
 ENV BIGGY_WORKSPACES_ROOT=/app/workspaces
 
 CMD ["python", "-m", "biggy.worker"]

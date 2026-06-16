@@ -1,7 +1,6 @@
 """``python -m biggy.worker`` — claim jobs from Redis, run the engine, persist + stream (PHASE2 §1).
 
-A single-process consume loop: block for a job, run it to a terminal state, ACK, repeat. Set
-``BIGGY_FAKE_RUN=1`` to replay the canonical investigation without a Gemini key.
+A single-process consume loop: block for a job, run it to a terminal state, ACK, repeat.
 """
 
 from __future__ import annotations
@@ -19,32 +18,22 @@ from biggy.worker.db import Db
 from biggy.worker.runner import run_job
 
 
-def _truthy(value: str | None) -> bool:
-    return value not in (None, "", "0", "false", "False")
-
-
 def main() -> None:
     load_dotenv(find_dotenv(usecwd=True))
-    ensure_google_key()
 
     database_url = os.environ.get("DATABASE_URL")
     redis_url = os.environ.get("REDIS_URL")
     if not database_url or not redis_url:
         sys.exit("DATABASE_URL and REDIS_URL are required (see .env.example).")
-
-    investigate_fn = None
-    if _truthy(os.environ.get("BIGGY_FAKE_RUN")):
-        from biggy.worker.fake import fake_investigate
-
-        investigate_fn = fake_investigate
+    if not ensure_google_key():
+        sys.exit("GEMINI_API_KEY (or GOOGLE_API_KEY) is required (see .env.example).")
 
     r = redis_io.connect(redis_url)
     redis_io.ensure_group(r)
     db = Db.connect(database_url)
     consumer = f"{socket.gethostname()}-{os.getpid()}"
     print(
-        f"[worker] consuming {redis_io.JOBS_STREAM} as {consumer} "
-        f"(fake={investigate_fn is not None})",
+        f"[worker] consuming {redis_io.JOBS_STREAM} as {consumer}",
         file=sys.stderr,
     )
 
@@ -56,7 +45,7 @@ def main() -> None:
             msg_id, fields = claimed
             try:
                 job = Job.model_validate_json(fields["data"])
-                run_job(job, db, r, investigate_fn=investigate_fn)
+                run_job(job, db, r)
             except Exception as exc:  # noqa: BLE001 - never let one bad job kill the loop
                 print(f"[worker] job error: {exc}", file=sys.stderr)
             finally:

@@ -35,7 +35,7 @@ From the repo root (Redis + Postgres + the worker must be up):
 docker compose up -d                  # Redis + Postgres
 pnpm -C src/web install
 pnpm -C src/web db:push               # apply the Drizzle schema
-python -m biggy.worker                # consume jobs (set BIGGY_FAKE_RUN=1 for a keyless demo)
+python -m biggy.worker                # consume jobs
 pnpm -C src/web dev                   # http://localhost:3000/investigations
 ```
 
