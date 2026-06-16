@@ -48,6 +48,20 @@ see `adr/ADR-014-shared-redis.md`); **`auth-service` is an upstream of ~8 servic
 | **F** | *"checkout getting slower over the past few days"* | as_of 06-16 12:00 | a gradual memory-leak / saturation read off a multi-day trend; **no recent deploy correlates** | trend reasoning; resists forcing a deploy-correlation (as_of is before A's spike, so p99 shows only the creep) |
 | **G** | *"why was checkout unstable between June 10 and June 12?"* | range 06-10…06-12 | a **timeline of two distinct incidents** — B (auth, 06-10) + D (redis, 06-12) — not one root cause; nothing from 06-16 | range reasoning over the continuous corpus; correct time-scoping |
 
+## What the agent may read (access boundary)
+The agent's evidence access is rooted at **`telemetry/` + the standing knowledge** (`topology`,
+`teams`, `slos`, `monitors`, `adr`, `runbooks`, `incident-library`, `GLOSSARY`). The **entire
+`scenarios/` tree is harness-only and is never exposed to the agent's tools** — *both* files are
+things the **harness** uses, not the agent:
+- the orchestrator reads `query.yaml` to **pose** the query (+ `as_of`/`range`); the agent receives
+  the query as its task input — it does **not** read the file;
+- the eval grader reads `HIDDEN_TRUTH.md` to **score**; the agent never sees it.
+
+Enforce in the engine, not by convention: (1) the agent's evidence root **excludes `scenarios/`**;
+(2) a path denylist on `read_file`/`search`/`list_evidence` as belt-and-suspenders; (3) a unit test
+asserting the agent cannot open anything under `scenarios/`. (`incident-library/` stays reachable —
+it's the semantic-memory corpus, not an answer key.)
+
 ## Grading
 `HIDDEN_TRUTH.md` in each scenario encodes the gradeable expectations (root cause / inconclusive /
 multi-incident, herring, noise to drop, required citations into `telemetry/`, confidence ranges,

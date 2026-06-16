@@ -17,6 +17,13 @@
 > answerable — see scenario **G**. The §0 richness philosophy and §5–§7 (scenarios, HIDDEN_TRUTH
 > schema, coverage) still hold; only the *storage layout* changed. Authoritative orientation +
 > eval set: `workspaces/acme-checkout/README.md`.
+>
+> **Access boundary (enforce in the engine).** The agent's evidence root is `telemetry/` + standing
+> knowledge ONLY. The **entire `scenarios/` tree is harness-only** — `query.yaml` is read by the
+> orchestrator to *pose* the query (the agent gets it as a task input, not via a file tool) and
+> `HIDDEN_TRUTH.md` by the grader to *score*; neither is exposed to the agent's tools. Enforce by
+> rooting evidence outside `scenarios/`, denylisting it in the file tools, and a test asserting the
+> agent can't open it. (`incident-library/` remains reachable — it's the semantic-memory corpus.)
 
 ---
 
