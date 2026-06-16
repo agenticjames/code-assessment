@@ -1,6 +1,6 @@
 # Incident Investigator — Design & Build Plan
 
-> Working codename: **Sleuth** (rename later). An AI on-call triage copilot that investigates messy production incidents and produces a **briefing you can trust** — every claim cited and machine-verified, every hypothesis tested against disconfirming evidence, uncertainty stated honestly.
+> Working name: **Biggy**. An AI on-call triage copilot that investigates messy production incidents and produces a **briefing you can trust** — every claim cited and machine-verified, every hypothesis tested against disconfirming evidence, uncertainty stated honestly.
 
 **Status:** design locked, pre-build.
 **Context:** Biggy AI Engineer take-home (`docs/task/`). Phase 1 = Python CLI. Phase 2 = shadcn web app + Redis.
@@ -50,9 +50,9 @@ One workspace (**"Acme Checkout"**, an e-commerce stack), several incidents you 
 
 **Why three.** A proves grounded reasoning under ambiguity; B proves it scales to noise; C proves it knows its limits. Together they prove the system *reasons* rather than pattern-matching one planted answer — which kills the overfitting worry a single scenario invites.
 
-**Cherry scenarios (time-permitting / "what I'd improve"):**
-- **D — "didn't we see this before?"** an explicit *recurring* incident → showcases semantic incident-memory retrieval ("matches INC-0987, same fix").
-- **Second workspace** (different domain, e.g. a data-streaming pipeline) → proves the engine isn't hardcoded to one topology. Lives in the eval harness.
+**Beyond the core three:**
+- **D — "didn't we see this before?"** an explicit *recurring* incident → the showcase for **semantic incident-memory** (a core capability, §4.5): "matches INC-0987, same fix." Built in C9.
+- **Second workspace** (different domain, e.g. a data-streaming pipeline) → the true *with-more-time* multiplier; proves the engine isn't hardcoded to one topology. Lives in the eval harness.
 
 ---
 
@@ -134,14 +134,14 @@ Sample texture:
 ## 4. Agent approach (the core AI decision)
 
 > **Your question: is the loop the best approach, or a knowledge graph, or hypothesize-then-prove?**
-> **Verdict: a hypothesis-driven *abductive* loop, traversing a lightweight dependency graph as a tool, with surgical semantic memory and code-verified grounding.** Not a graph DB. Not pure ReAct. Not pure RAG.
+> **Verdict: a hypothesis-driven *abductive* loop, traversing a lightweight dependency graph as a tool, with semantic incident-memory and code-verified grounding.** Not a graph *DB*. Not pure ReAct. Not pure RAG. (On "are we doing embeddings / graphs?" — **yes to both, right-sized**: see §4.5 and §4.8.)
 
 ### 4.1 Why this shape (and why not the alternatives)
 
 | Option | Verdict | Why |
 |---|---|---|
 | Pure ReAct loop ("read stuff until done") | Necessary but insufficient | Wanders, no principled stopping condition, can stop early or stuff context with noise |
-| **Full knowledge graph / graph DB** (Neo4j, extracted causal edges) | **Rejected at this scale** | The *extraction* of a KG from messy data is itself the hard problem; storage isn't our bottleneck, *reasoning* is. We take the KG's one real benefit — causal-direction traversal — by modeling topology as a small queryable graph **tool**. (Writeup: "here's exactly where a graph DB would earn its place — huge topology, cross-incident entity resolution.") |
+| **Full knowledge graph / graph DB** (Neo4j, extracted causal edges) | **Rejected at this scale** | The *extraction* of a KG from messy data is itself the hard problem; storage isn't our bottleneck, *reasoning* is. We take the KG's one real benefit — causal-direction traversal — by modeling topology as a small queryable graph **tool** — in fact we build *two* lightweight graphs (§4.8). (Writeup: "here's where a graph DB *would* earn its place — huge topology, cross-incident entity resolution.") |
 | Pure RAG + summarize | Rejected as the spine | Retrieval isn't the problem at this corpus size; an unstructured summary produces a confident blob with no calibration, no disconfirmation, no contradiction tracking |
 | **Hypothesis-driven abductive loop** | **Chosen** | Mirrors how real SREs/detectives work; *directs* the search (test theories, don't read everything); natively produces the desired output (multiple hypotheses, supporting + contradicting evidence, confidence, ruled-out); has a principled stop condition |
 
@@ -187,7 +187,7 @@ No "solve it" tool. Just evidence-access primitives that always return content *
 | `read_file(path, filter?)` | content, line-referenced |
 | `search(keyword)` | grep hits across the vault → `file:line` |
 | `get_metric(name, window)` | a metric series (for timing correlation) |
-| `recall_similar_incidents(symptom_signature)` | **semantic** search over the incident-library (the one place embeddings earn their keep — see 4.5) |
+| `recall_similar_incidents(symptom_signature)` | **semantic** search over the incident-library — where embeddings earn their keep (§4.5) |
 | `record_finding(claim, snippet, source, supports/refutes, confidence)` | mutates the ledger (the agent's memory) |
 
 ### 4.4 State / memory — the Investigation Ledger (shape, not code)
@@ -218,10 +218,14 @@ noise_dropped:   []              noise_dropped:   [disk-space SEV4]
 open_questions:  []              open_questions:  [no canary logs for dep-7e2a]
 ```
 
-### 4.5 Retrieval — two tiers (surgical, not buzzword)
+### 4.5 Retrieval & embeddings — two tiers (technique vs. infrastructure)
 
-1. **Within-incident evidence → structured tools, no embeddings.** At a few dozen files, the bottleneck is reasoning, not retrieval. Keyword + whole-file reads give precision with zero embedding latency.
-2. **Cross-incident memory + runbooks → semantic search.** Matching a *new* incident's symptom signature to past incidents is a genuine meaning-match problem where keywords fail (same failure class, different words). This is the *one* place a vector index is the right tool — and it's where the "RAG / vector DB / memory" criterion is satisfied honestly. (Small local index; pgvector/Redis in Phase 2.)
+Separate the *technique* (semantic search) from the *infrastructure* (a vector DB). We use the technique where it genuinely wins; we don't stand up a dedicated vector-DB service for a few hundred docs.
+
+1. **Within-incident evidence → structured tools, no embeddings.** A few dozen files in a time window: the bottleneck is reasoning, not retrieval. Structured tools + keyword + whole-file reads give precision at zero embedding latency. Embeddings here would *add* dilution, not remove it.
+2. **Cross-incident memory + runbooks → semantic search (a core capability, not a footnote).** Matching a *new* incident's symptom signature to past incidents is the textbook meaning-match problem where keywords fail — "connection pool exhausted" vs "max clients reached" vs "ran out of connections" are one failure class, different words. This single feature satisfies **RAG + vector search + memory** at once, with a real use case. Backed by an **in-process index** (numpy/FAISS-flat) in Phase 1 and **Redis vector search** in Phase 2 — no new dependency, since Redis is already justified for the job queue + live trace. It powers the recurring-incident demo (Scenario D) and enriches Scenario A's briefing ("this matches INC-0987, same fix").
+
+*Considered and mostly rejected:* semantically **clustering** Scenario B's alert storm. Tempting, but structured fields (service / error-type / time) likely cluster more precisely than embeddings here — so we'd reach for embeddings only if the structured signal proved too weak. (Noting the considered-but-rejected option is itself the judgment the brief grades.)
 
 ### 4.6 Two distinct verification mechanisms (don't conflate)
 
@@ -236,9 +240,22 @@ open_questions:  []              open_questions:  [no canary logs for dep-7e2a]
 - Evidence insufficient → **state it** (Scenario C path); never fabricate a cause.
 - Ungrounded citation survives verify → claim demoted/flagged in the report, not presented as fact.
 
+### 4.8 Structured graphs — we're already building two (just not in a graph DB)
+
+The question was never "graph or no graph" — it's **graph database vs. in-memory structured graph**, and at this scale in-memory wins. We build two:
+
+1. **Static topology graph** (`services.yaml`: services + `depends_on`), traversed as a tool. This *is* "structured operational context," and causal-direction reasoning ("what's *upstream* of checkout?") *is* a graph walk. It's what lets the agent reason past the symptom (DB timeouts) to the upstream cause (rate-limiter → shared Redis pool).
+2. **Dynamic causal graph** = the ledger's **hypothesis ↔ evidence ↔ timeline** links (§4.4). We *do* build a causal structure of the incident — we just store it as the ledger, not in Neo4j.
+
+So the "knowledge graph / structured context" criterion is met by the **right-sized representation**, and skipping a graph DB is a *deliberate non-choice* — it earns its place at huge topologies or cross-incident entity resolution; name that boundary in the writeup. (The GraphRAG-style KG+embeddings hybrid is exactly the over-build the brief warns against here.)
+
+**Phase 2 payoff:** render the topology + the incident's **blast radius** as an actual graph (rate-limiter → redis → checkout lit up; the migration herring greyed out). That makes the graph *visible* to the reviewer for almost no cost — it's just drawing data we already have. It's the graph's equivalent of the clickable-citation payoff.
+
 ---
 
 ## 5. Architecture
+
+> Detailed build reference (stack, engine internals, module layout, Phase 2 wiring) lives in [`ARCHITECTURE.md`](ARCHITECTURE.md). This section is the in-context overview.
 
 ### 5.1 The contract that decouples the two phases
 
@@ -266,7 +283,7 @@ investigate "<query>"  --workspace acme-checkout  --scenario A
    live trace in terminal (rich) + ledger.json + briefing.md
 ```
 
-- **Language/stack:** Python; Pydantic (schema-enforced output + validate/retry = grounding + failure handling backbone); the Anthropic SDK with tool-use; `rich` for the live trace; `typer`/`click` for CLI.
+- **Language/stack:** Python; **LangChain primitives** (`init_chat_model`, `@tool`, `.with_structured_output()`, `.bind_tools()`) orchestrated in **plain Python** (not LangGraph — see ARCHITECTURE §3.6); **Gemini** via `init_chat_model("google_genai:…")`, provider-swappable; Pydantic as the schema contract; `rich` for the live trace; Typer for CLI; LangSmith for tracing.
 - **Determinism for demos:** low temperature + strong scenario design so the conclusion is stable; commit a recorded sample run so a reviewer's run can't diverge embarrassingly.
 
 ### 5.3 Phase 2 — shadcn web app + Redis
@@ -280,13 +297,14 @@ Next.js (shadcn) ──POST /investigate──► FastAPI ──► engine runs 
        └───── GET /investigations/:id ◄── Redis (ledger + report store/cache)
 ```
 
-**Redis earns its place** (not decoration): job queue for triggered runs · pub/sub to stream the live reasoning trace to the browser (the hero moment) · store/cache for ledgers + reports + the semantic memory index. (Pleasing coincidence: the flagship scenario is *about* Redis pool exhaustion.)
+**Redis earns its place** (not decoration): job queue for triggered runs · pub/sub to stream the live reasoning trace to the browser (the hero moment) · store/cache for ledgers + reports · **vector search** for the semantic incident-memory index — so the vector store is a Redis feature we already pay for, not a new dependency. (Pleasing coincidence: the flagship scenario is *about* Redis pool exhaustion.)
 
 **Frontend (shadcn):**
 - Workspace + scenario picker (the demo menu of incidents).
 - **Trigger → live streaming trace panel** (watch it reason, confidence bars animate).
 - **Briefing card:** ranked hypotheses w/ confidence, supporting + contradicting evidence, ruled-out noise, open questions, recommended action, stakeholder note (copy button).
 - **Clickable verified citations → source viewer** opens the file at the cited line — grounding made tangible. This is the web-native payoff of the Phase 1 verifier.
+- **Blast-radius graph** — the topology with the incident's causal chain lit up and the red herring greyed out (the visible payoff of §4.8).
 - A `✅ N/N claims verified` grounding badge.
 
 ---
@@ -294,6 +312,8 @@ Next.js (shadcn) ──POST /investigate──► FastAPI ──► engine runs 
 ## 6. Phased build plan (one commit per level)
 
 Vertical slices: get Scenario A working end-to-end (C1–C6) before adding breadth. Each commit is demonstrable.
+
+> **Build order lives in [`DELIVERY.md`](DELIVERY.md)** — it groups these commits into demoable, always-submittable increments (walking-skeleton first). This section is the task/architecture breakdown; read DELIVERY.md for the *sequence to build in*.
 
 ### Phase 1 — Python CLI
 
@@ -307,7 +327,7 @@ Vertical slices: get Scenario A working end-to-end (C1–C6) before adding bread
 | **C6** | **Report renderer** (briefing + stakeholder note) + **CLI live trace** (rich) | `investigate "<query>"` streams reasoning + prints briefing + grounding badge |
 | **C7** | **Scenario B** (alert storm) + **Scenario C** (inconclusive) datasets | B collapses storm→cause; C returns calibrated 55/45 + missing-evidence ask |
 | **C8** | **Eval harness** (run all scenarios → scorecard: root cause? herring ruled out? citations valid? calibrated?) | `eval` prints a passing scorecard across scenarios |
-| **C9** | **Semantic incident memory** (embed incident-library + runbooks) + recurring **Scenario D** | Agent retrieves & cites INC-0987 on a matching new incident |
+| **C9** | **Semantic incident memory** — in-process vector index over incident-library + runbooks (→ Redis vector in Phase 2) + recurring **Scenario D** | Agent retrieves & cites INC-0987 on a matching incident; enriches Scenario A's briefing |
 
 ### Phase 2 — Web app
 
@@ -318,7 +338,7 @@ Vertical slices: get Scenario A working end-to-end (C1–C6) before adding bread
 | **C12** | **Briefing UI** + **clickable verified citations → source viewer** + grounding badge | Full briefing renders; clicking a citation opens the source at the line |
 | **C13** | Polish: investigation **history** (Redis-backed), stakeholder-note copy, empty/error/loading states | Demo-ready end to end |
 
-**MVP line:** C1–C6 is already a strong-hire submission. C7–C8 push it to "we need this person" (generalization + *I measure my agent*). C9 + Phase 2 are the show-stoppers.
+**MVP line:** C1–C6 is the strong-hire floor (Scenario A, end-to-end). C7–C9 are the intended **core** build-out — breadth (B/C), *I-measure-my-agent* (eval), and **semantic memory** (the RAG/vector/memory story). Phase 2 + a second workspace are the true "with more time" multipliers.
 
 ---
 
@@ -332,8 +352,8 @@ Vertical slices: get Scenario A working end-to-end (C1–C6) before adding bread
 | Prompting & prompt design | "seek disconfirming evidence" objective; structured hypothesis output |
 | Tool use | deterministic source-attached evidence tools |
 | Memory / state | evolving append-only Ledger + cross-incident semantic memory |
-| RAG / retrieval / vector DB | surgical: semantic search for incident-library + runbooks (tier 2) |
-| Knowledge graph / structured context | topology dependency graph traversed as a tool |
+| RAG / retrieval / vector DB | semantic search over incident-library + runbooks; in-process index → **Redis vector** (Phase 2); real use case = symptom-signature match (§4.5) |
+| Knowledge graph / structured context | **two** structured graphs — topology (traversed as a tool) + the ledger's hypothesis↔evidence graph; right-sized, no graph DB; blast-radius viz in Phase 2 (§4.8) |
 | Evidence grounding | snippet citations + **code verifier** |
 | Failure handling | schema-retry, tool errors, step budget, insufficient-evidence path |
 | Practical UX | live trace (CLI + web), clickable citations, stakeholder note |
@@ -346,7 +366,7 @@ Vertical slices: get Scenario A working end-to-end (C1–C6) before adding bread
 - LLM model + whether to cache the canonical run for bit-reproducible demos.
 - Adversarial verification pass (a "skeptic" mode per hypothesis) — rigor upgrade vs. scope; keep it a *directed evidence search*, never a debate, to avoid theater.
 - Scenario B's exact topology (which shared dependency cascades) — design its clue distribution with the same care as A.
-- Where the semantic index lives in Phase 2 (Redis vector vs. pgvector).
+- ~~Where the semantic index lives in Phase 2~~ → **decided: Redis vector** (already in the stack, no new dependency); in-process index (numpy/FAISS-flat) for Phase 1. Embedding model still TBD.
 
 ### 7.3 Submission write-up angles (for the take-home)
 
