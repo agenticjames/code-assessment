@@ -78,6 +78,28 @@ export const groundingSchema = z.object({
 });
 export type Grounding = z.infer<typeof groundingSchema>;
 
+// Deterministic comms-pass artifacts (biggy/engine/comms.py). Computed by the `reconcile` phase and
+// carried on the Ledger (not the LLM verdict), so the web reads them from `ledger_json`, defensively.
+export const customerImpactSchema = z.object({
+  ticket_count: z.number().default(0),
+  first_seen: z.string().nullish(),
+  services: z.array(z.string()).default([]),
+  top_priority: z.string().nullish(),
+  revenue_note: z.string().nullish(),
+  sources: z.array(z.string()).default([]),
+});
+export type CustomerImpact = z.infer<typeof customerImpactSchema>;
+
+export const statusCheckSchema = z.object({
+  has_draft: z.boolean().default(false),
+  draft_source: z.string().nullish(),
+  draft_excerpt: z.string().nullish(),
+  verdict_cause: z.string().nullish(),
+  needs_correction: z.boolean().default(false),
+  message: z.string().nullish(),
+});
+export type StatusCheck = z.infer<typeof statusCheckSchema>;
+
 // ---------- 3. Trace event union. type names MUST match engine/trace.py EVENT_* + worker lifecycle.
 //             Enforced by src/cli/tests/test_contract_parity.py. ----------
 export const TRACE_EVENT_TYPES = [

@@ -4,12 +4,14 @@ import { useMemo } from "react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEventStream } from "@/hooks/use-event-stream";
-import type { InvestigationResult, TraceEvent } from "@/lib/contracts";
+import type { CustomerImpact, InvestigationResult, StatusCheck, TraceEvent } from "@/lib/contracts";
 
 import { BlastRadius } from "./blast-radius";
 import { Briefing } from "./briefing";
+import { CustomerImpactCard } from "./customer-impact";
 import { RunHeader } from "./run-header";
 import { SourceViewerProvider } from "./source-viewer";
+import { StatusCorrection } from "./status-correction";
 import { ToolCallAudit } from "./tool-call-audit";
 import { TracePanel } from "./trace-panel";
 
@@ -22,6 +24,9 @@ export type LiveRunInitial = {
   status: string;
   groundingVerified: number | null;
   groundingTotal: number | null;
+  // Deterministic comms-pass artifacts (from ledger_json); null until the run completes.
+  impact?: CustomerImpact | null;
+  statusCheck?: StatusCheck | null;
 };
 
 const TRACE_TYPES = new Set([
@@ -91,7 +96,11 @@ export function LiveRun({ initial }: { initial: LiveRunInitial }) {
 
           <TabsContent value="briefing">
             {run.verdict ? (
-              <Briefing result={run.verdict} />
+              <div className="space-y-4">
+                <CustomerImpactCard impact={initial.impact} />
+                <Briefing result={run.verdict} />
+                <StatusCorrection check={initial.statusCheck} />
+              </div>
             ) : run.status === "failed" ? (
               <p className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
                 {run.error ?? "Investigation failed."}

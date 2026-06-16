@@ -27,6 +27,7 @@ herring:
     - "trace checkout-req-trace: orders-db.query span is fast/healthy (~22ms); the budget burns on redis.acquire_connection (5000ms timeout)"
 noise_to_drop:
   - "disk-space-low SEV4 on host log-aggregator — chronic, firing since 2026-06-13 (3 days), tied to INC-1003, never customer-impacting and off every request path"
+expects_status_correction: true             # the in-window status DRAFT wrongly blames the migration; the deterministic comms pass must flag it for correction
 required_citations:                         # telemetry/ paths; verifier substring-matches
   - "telemetry/changes/dep-7e2a.diff :: - max_tokens: 100 / + max_tokens: 10"
   - "telemetry/logs/redis.log :: max number of clients reached"

@@ -56,7 +56,7 @@
 ## 2026-06-16
 [08:16] pagerduty: 🚨 search 5xx high
 [08:15] deploybot: dep-5b71 search v2.9 deployed (theo)
-[08:18] theo: search 500s started right after my 08:15 deploy (dep-5b71) — NPE in parseQuery. rolling back
+[08:18] theo: search 500s kicked off right after my 08:15 deploy — could be me, digging in
 [08:40] deploybot: dep-5b71 rolled back (theo)
 [08:43] theo: error rate's back to baseline. empty-query NPE I introduced, my bad 🙈
 [11:25] raj: fyi checkout's felt sluggish the last few days, p99 slowly creeping. nothing deployed though — on my radar
@@ -70,9 +70,12 @@
 [14:55] raj: checkout logs show "timeout acquiring connection from pool" — looks DB-ish to me too
 [14:58] dana: migration rollback done… still 504s 🤔
 [15:01] raj: yeah still erroring. so it's not the migration?
-[15:03] priya: checkout latency lines up almost exactly with the rate-limiter config push at 14:45 (dep-7e2a), not the 14:00 migration
+[15:03] priya: fwiw checkout's latency curve lines up almost exactly with the rate-limiter push at 14:45 (dep-7e2a), not the 14:00 migration
 [15:04] sam: ignore the disk alert on log-aggregator btw — it's been firing for days, always does
-[15:06] dana: the db's been healthy the whole time, query latency flat. it's not the db
+[15:05] dana: maybe, but the migration's the only schema change today — that's still my bet; the rollback may not have fully settled
+[15:07] raj: agreed, let's clear the db angle before chasing a config tweak
 [15:09] raj: still 504ing, customers still hitting it
-[15:12] mei: ok, migration's ruled out. priya, what are you seeing on the rate-limiter side?
-[15:14] priya: digging now — redis connected_clients is pegged at 50…
+[15:13] mei: still open — the rollback didn't clear it and the rate-limiter timing is only a maybe. keep digging, no root cause called yet
+[15:16] dana: ok, db's clean — query latency's been flat the whole time. it is NOT the migration
+[15:18] priya: redis connected_clients is pegged at 50 — the rate-limiter's been churning the shared pool since 14:45. it's dep-7e2a
+[15:20] mei: that's it — priya flagged the timing early and got talked over. roll back dep-7e2a

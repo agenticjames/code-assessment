@@ -61,6 +61,47 @@ class Grounding(BaseModel):
     )
 
 
+class CustomerImpact(BaseModel):
+    """Customer-facing impact, derived deterministically (NOT by the LLM) from in-window support
+    tickets — a grounded blast-radius/severity line for the briefing instead of a guess."""
+
+    ticket_count: int = 0
+    first_seen: str | None = Field(
+        default=None, description="Earliest in-window ticket timestamp."
+    )
+    services: list[str] = Field(
+        default_factory=list, description="Distinct affected service areas."
+    )
+    top_priority: str | None = Field(
+        default=None, description="Highest ticket priority seen (urgent>high>normal>low)."
+    )
+    revenue_note: str | None = Field(
+        default=None, description="A quantified revenue-impact note, if the tickets carry one."
+    )
+    sources: list[str] = Field(
+        default_factory=list, description="'<path>:<line>' for each counted ticket."
+    )
+
+
+class StatusCheck(BaseModel):
+    """Public status page cross-checked against the verdict — the deterministic 'correct the draft'
+    callout. Catches a human consensus (a status DRAFT) that the evidence contradicts."""
+
+    has_draft: bool = False
+    draft_source: str | None = Field(
+        default=None, description="'<path>:<line>' of the in-window draft."
+    )
+    draft_excerpt: str | None = None
+    verdict_cause: str | None = Field(
+        default=None, description="The confirmed cause the draft is checked against."
+    )
+    needs_correction: bool = False
+    message: str | None = Field(
+        default=None,
+        description="Responder-facing correction note when the draft diverges from the evidence.",
+    )
+
+
 class Hypothesis(BaseModel):
     """A candidate cause that evolves: open -> confirmed | ruled_out as evidence arrives."""
 

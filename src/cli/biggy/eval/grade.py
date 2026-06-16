@@ -289,12 +289,28 @@ def _expected_hypotheses_check(key: dict, ledger: Ledger) -> Check | None:
     return _list_expectation_check("expected hypotheses", expected, texts)
 
 
+def _status_correction_check(key: dict, ledger: Ledger) -> Check | None:
+    """Opt-in (key ``expects_status_correction``): did the deterministic comms pass flag the public
+    status DRAFT for correction? The 'resist the human consensus' capability, held to the same bar
+    as the rest — only graded for scenarios whose answer key declares it."""
+    if not key.get("expects_status_correction"):
+        return None
+    sc = ledger.status_check
+    ok = bool(sc and sc.needs_correction)
+    if sc and sc.has_draft:
+        detail = f"flagged ({sc.draft_source})" if ok else "draft present but not flagged"
+    else:
+        detail = "no in-window draft found"
+    return Check("status-page correction", detail, ok)
+
+
 def _common_checks(key: dict, ledger: Ledger) -> list[Check]:
     checks = [_citation_check([str(c) for c in _as_list(key.get("required_citations"))], ledger)]
     for optional in (
         _open_question_check(key, ledger),
         _noise_check(key, ledger),
         _memory_check(key, ledger),
+        _status_correction_check(key, ledger),
     ):
         if optional is not None:
             checks.append(optional)
