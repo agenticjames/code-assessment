@@ -50,3 +50,27 @@ def test_unknown_scenario_raises(ws_root):
     )
     with pytest.raises(FileNotFoundError):
         Vault.load(cfg)
+
+
+def test_raw_text_resolves_and_guards(config_a):
+    v = Vault.load(config_a)
+    assert "max number of clients reached" in (
+        v.raw_text("telemetry/logs/redis.log:59") or ""
+    )
+    assert (
+        v.raw_text("scenarios/A-checkout-504/HIDDEN_TRUTH.md") is None
+    )  # answer key guarded
+    assert v.raw_text("nope/missing.log") is None
+
+
+def test_ablation_hides_file_from_manifest_and_verifier(ws_root):
+    cfg = RunConfig(
+        query="x",
+        workspace="acme-checkout",
+        scenario="A",
+        workspaces_root=ws_root,
+        ablate=["telemetry/logs/redis.log"],
+    )
+    v = Vault.load(cfg)
+    assert all(e.relpath != "telemetry/logs/redis.log" for e in v.manifest)
+    assert v.raw_text("telemetry/logs/redis.log") is None

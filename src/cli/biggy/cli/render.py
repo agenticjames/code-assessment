@@ -16,7 +16,7 @@ from rich.text import Text
 
 from biggy.engine.config import RunConfig
 from biggy.engine.ledger import Ledger
-from biggy.engine.schemas import EvidenceRef, Hypothesis, InvestigationResult
+from biggy.engine.schemas import EvidenceRef, Grounding, Hypothesis, InvestigationResult
 
 console = Console()
 
@@ -44,9 +44,33 @@ def _conf_bar(c: float) -> str:
 
 
 def _evidence(refs: list[EvidenceRef]) -> str:
-    return "\n".join(
-        f'- {escape(e.claim)}\n  [dim]{escape(e.source)}[/] "{escape(e.snippet)}"'
-        for e in refs
+    lines = []
+    for e in refs:
+        if e.verified is None:
+            tag = ""
+        elif e.verified:
+            tag = " [green][verified][/]"
+        else:
+            tag = " [red][UNVERIFIED][/]"
+        lines.append(
+            f'- {escape(e.claim)}{tag}\n  [dim]{escape(e.source)}[/] "{escape(e.snippet)}"'
+        )
+    return "\n".join(lines)
+
+
+def _grounding_panel(g: Grounding) -> Panel:
+    clean = g.claims_total > 0 and g.claims_verified == g.claims_total
+    head = f"{g.claims_verified}/{g.claims_total} claims verified"
+    body = f"[green]{head}[/]" if clean else f"[yellow]{head}[/]"
+    if g.ungrounded:
+        body += "\n" + "\n".join(
+            f"[red]UNVERIFIED[/] {escape(u)}" for u in g.ungrounded
+        )
+    return Panel(
+        body,
+        title="[bold]Grounding[/] [dim](deterministic citation verifier)[/]",
+        border_style="green" if clean else "yellow",
+        expand=False,
     )
 
 
@@ -71,15 +95,22 @@ def _hypothesis_panel(h: Hypothesis, rank: int) -> Panel:
 
 
 def _briefing(result: InvestigationResult, ledger: Ledger) -> Group:
+    outcome = (
+        "[green]root cause[/]"
+        if result.outcome == "root_cause"
+        else "[yellow]INCONCLUSIVE[/]"
+    )
     parts: list = [
         Panel(
             escape(result.summary),
-            title="[bold]Investigation briefing[/]",
+            title=f"[bold]Investigation briefing[/]  ({outcome})",
             subtitle=f"[dim]{escape(ledger.query)}[/]",
             border_style="cyan",
             expand=False,
         )
     ]
+    if ledger.grounding is not None:
+        parts.append(_grounding_panel(ledger.grounding))
     ranked = sorted(result.hypotheses, key=lambda h: -h.confidence)
     parts += [_hypothesis_panel(h, i) for i, h in enumerate(ranked, 1)]
     if result.open_questions:

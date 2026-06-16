@@ -37,5 +37,11 @@ def test_live_abductive_rules_out_herring(config_a, needs_llm, tmp_path):
     ]
     assert any(s.startswith("telemetry/") for s in sources)
     assert ledger.initial_hypotheses and ledger.tool_calls
+
+    # Inc 2 trust layer: conclusive outcome + the deterministic grounding score (mostly verified)
+    assert result.outcome == "root_cause"
+    assert ledger.grounding is not None and ledger.grounding.claims_total >= 1
+    assert ledger.grounding.claims_verified >= 0.5 * ledger.grounding.claims_total
+
     reloaded = Ledger.load(ledger.to_json(tmp_path / "ledger.json"))
     assert reloaded.result is not None and reloaded.query == config_a.query

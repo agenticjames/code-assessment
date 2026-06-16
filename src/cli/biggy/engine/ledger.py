@@ -11,7 +11,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from biggy.engine.schemas import Hypothesis, InvestigationResult
+from biggy.engine.schemas import Grounding, Hypothesis, InvestigationResult
 
 
 class ToolCall(BaseModel):
@@ -31,6 +31,9 @@ class Ledger(BaseModel):
     initial_hypotheses: list[Hypothesis] = Field(default_factory=list)
     tool_calls: list[ToolCall] = Field(default_factory=list)
     result: InvestigationResult | None = None
+    grounding: Grounding | None = (
+        None  # set by the verify phase (deterministic citation check)
+    )
 
     def record_hypotheses(self, hypotheses: list[Hypothesis]) -> None:
         """Snapshot the candidate set right after the hypothesize phase."""

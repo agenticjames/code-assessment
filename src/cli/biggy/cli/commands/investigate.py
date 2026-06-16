@@ -58,6 +58,12 @@ def investigate(
         hidden=True,
         help="Override the workspaces/ root (else $BIGGY_WORKSPACES_ROOT or the in-repo default).",
     ),
+    ablate: Optional[list[str]] = typer.Option(
+        None,
+        "--ablate",
+        help="Hide an evidence path from the agent (repeatable) — the honesty demo, "
+        "e.g. --ablate telemetry/logs/redis.log.",
+    ),
 ) -> None:
     """Investigate an incident from a vague report and print a grounded briefing."""
     from dotenv import find_dotenv, load_dotenv
@@ -85,6 +91,7 @@ def investigate(
         max_steps=max_steps,
         out_dir=out,
         workspaces_root=workspaces_root,
+        ablate=ablate or [],
     )
 
     try:

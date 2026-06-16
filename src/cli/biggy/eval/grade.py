@@ -1,9 +1,8 @@
 """Grade one investigation against a scenario's ``HIDDEN_TRUTH.md``.
 
-The answer key's YAML front-matter is read **after** the run (never fed to the agent). Inc 1 raises
-the bar from "named the cause" to "named the cause **and** explicitly ruled out the herring": the
-herring service must appear with ``status == ruled_out``, not merely be absent. The full Inc-2
-citation verifier (re-opening each cited source) is still to come.
+The answer key's YAML front-matter is read **after** the run (never fed to the agent). The Inc-2 bar
+is the trust bar: the agent must name the cause, explicitly rule out the herring, return the right
+`outcome`, **and** have every cited claim pass the deterministic verifier (grounding clean).
 """
 
 from __future__ import annotations
@@ -34,6 +33,12 @@ class Scorecard:
     herring_service: str = ""
     herring_status: str | None = None
     herring_ruled_out: bool = False
+    outcome_expected: str = ""
+    outcome_actual: str = ""
+    outcome_ok: bool = True
+    grounding_total: int = 0
+    grounding_verified: int = 0
+    grounding_clean: bool = False
     confidence_checks: list[tuple[str, str, float | None, bool]] = field(
         default_factory=list
     )
@@ -43,9 +48,13 @@ class Scorecard:
 
     @property
     def passed(self) -> bool:
-        # Inc 1 bar: named the right cause AND explicitly ruled out the herring (if one exists).
-        return self.named_correct and (
-            not self.herring_service or self.herring_ruled_out
+        # Inc 2 (trust) bar: right cause + herring ruled out + right outcome + all citations verified.
+        herring_ok = not self.herring_service or self.herring_ruled_out
+        return (
+            self.named_correct
+            and herring_ok
+            and self.outcome_ok
+            and self.grounding_clean
         )
 
 
@@ -70,12 +79,9 @@ def grade(ledger: Ledger, hidden_truth_path: Path | str) -> Scorecard:
     key = _front_matter(Path(hidden_truth_path))
     rc_service = str((key.get("root_cause") or {}).get("service", ""))
     herring_service = str((key.get("herring") or {}).get("service", ""))
+    result = ledger.result
 
-    hyps = (
-        sorted(ledger.result.hypotheses, key=lambda h: -h.confidence)
-        if ledger.result
-        else []
-    )
+    hyps = sorted(result.hypotheses, key=lambda h: -h.confidence) if result else []
     by_service = {(h.service or "").lower(): h.confidence for h in reversed(hyps)}
     top = hyps[0] if hyps else None
     named = next(
@@ -90,6 +96,10 @@ def grade(ledger: Ledger, hidden_truth_path: Path | str) -> Scorecard:
         else None
     )
 
+    outcome_expected = str(key.get("outcome", ""))
+    outcome_actual = result.outcome if result else ""
+    g = ledger.grounding
+
     card = Scorecard(
         scenario=str(key.get("scenario", "?")),
         root_cause_service=rc_service,
@@ -99,6 +109,14 @@ def grade(ledger: Ledger, hidden_truth_path: Path | str) -> Scorecard:
         herring_service=herring_service,
         herring_status=herring.status if herring else None,
         herring_ruled_out=bool(herring and herring.status == "ruled_out"),
+        outcome_expected=outcome_expected,
+        outcome_actual=outcome_actual,
+        outcome_ok=(not outcome_expected) or (outcome_actual == outcome_expected),
+        grounding_total=g.claims_total if g else 0,
+        grounding_verified=g.claims_verified if g else 0,
+        grounding_clean=bool(
+            g and g.claims_total > 0 and g.claims_verified == g.claims_total
+        ),
     )
     for svc, spec in (key.get("expected_confidence") or {}).items():
         actual = by_service.get(svc.lower())
@@ -133,6 +151,16 @@ def scorecard_panel(card: Scorecard) -> Panel:
             "herring ruled out",
             f"{escape(card.herring_service)} ({escape(hs)})  {mark(card.herring_ruled_out)}",
         )
+    if card.outcome_expected:
+        t.add_row(
+            "outcome",
+            f"{escape(card.outcome_actual or '-')} vs {escape(card.outcome_expected)}  "
+            f"{mark(card.outcome_ok)}",
+        )
+    t.add_row(
+        "grounding",
+        f"{card.grounding_verified}/{card.grounding_total} verified  {mark(card.grounding_clean)}",
+    )
     for svc, spec, actual, ok in card.confidence_checks:
         av = "-" if actual is None else f"{actual:.2f}"
         t.add_row(f"conf {escape(svc)}", f"{av} vs {escape(spec)}  {mark(ok)}")
@@ -144,7 +172,7 @@ def scorecard_panel(card: Scorecard) -> Panel:
     return Panel(
         t,
         title="[bold]Scorecard vs HIDDEN_TRUTH[/]",
-        subtitle="[dim]Inc 1: named cause + herring ruled out; full citation verifier is Inc 2[/]",
+        subtitle="[dim]Inc 2 bar: cause + herring ruled out + outcome + all citations verified[/]",
         border_style="green" if card.passed else "yellow",
         expand=False,
     )

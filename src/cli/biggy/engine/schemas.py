@@ -26,6 +26,22 @@ class EvidenceRef(BaseModel):
         description="Citation as '<path>:<line>', e.g. 'telemetry/logs/redis.log:59'. "
         "Must be a path returned by the tools."
     )
+    verified: bool | None = Field(
+        default=None,
+        description="Set by the deterministic verify phase (NOT the LLM): True if the snippet was "
+        "found in the cited source. Leave unset.",
+    )
+
+
+class Grounding(BaseModel):
+    """Result of the deterministic citation verifier (computed by code, not the LLM)."""
+
+    claims_total: int = 0
+    claims_verified: int = 0
+    ungrounded: list[str] = Field(
+        default_factory=list,
+        description="Descriptions of citations whose snippet was not found in the cited source.",
+    )
 
 
 class Hypothesis(BaseModel):
@@ -77,6 +93,12 @@ class InvestigationResult(BaseModel):
     """The adjudicated verdict."""
 
     query: str = Field(description="The incident report being investigated.")
+    outcome: Literal["root_cause", "inconclusive"] = Field(
+        default="root_cause",
+        description="'root_cause' if a cause is adequately supported by the evidence; "
+        "'inconclusive' if the evidence cannot separate the candidates or the deciding evidence is "
+        "missing — say so rather than fabricating a cause.",
+    )
     summary: str = Field(
         description="A 2-3 sentence plain-English briefing of what is happening."
     )

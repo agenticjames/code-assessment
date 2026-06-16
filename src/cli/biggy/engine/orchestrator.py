@@ -10,11 +10,11 @@ from __future__ import annotations
 from biggy.engine.config import RunConfig
 from biggy.engine.context import Investigation
 from biggy.engine.ledger import Ledger
-from biggy.engine.phases import Adjudicate, Hypothesize, Investigate, Phase
+from biggy.engine.phases import Adjudicate, Hypothesize, Investigate, Phase, Verify
 from biggy.engine.schemas import InvestigationResult
 from biggy.engine.trace import Tracer
 
-DEFAULT_PIPELINE: list[Phase] = [Hypothesize(), Investigate(), Adjudicate()]
+DEFAULT_PIPELINE: list[Phase] = [Hypothesize(), Investigate(), Adjudicate(), Verify()]
 
 
 def investigate(

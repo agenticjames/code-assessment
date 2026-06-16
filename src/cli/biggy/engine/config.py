@@ -11,7 +11,7 @@ in-repo default. See ``.env.example``.
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 DEFAULT_PROVIDER = "google_genai"
@@ -58,6 +58,9 @@ class RunConfig:
     max_steps: int = DEFAULT_MAX_STEPS
     out_dir: Path | None = None
     workspaces_root: Path | None = None
+    ablate: list[str] = field(
+        default_factory=list
+    )  # relpaths hidden from the agent (honesty demo)
 
     def resolved_workspaces_root(self) -> Path:
         return resolve_workspaces_root(self.workspaces_root)

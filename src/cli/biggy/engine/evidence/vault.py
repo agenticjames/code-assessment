@@ -75,11 +75,13 @@ class Vault:
         workspace: dict,
         scenario: Scenario,
         manifest: list[EvidenceFile],
+        ablate: set[str] | None = None,
     ):
         self.root = root
         self.workspace = workspace
         self.scenario = scenario
         self.manifest = manifest
+        self.ablate = ablate or set()
         self._allowed = {e.relpath for e in manifest}
 
     # ---------- loading ----------
@@ -91,9 +93,12 @@ class Vault:
         workspace = yaml.safe_load(
             (root / "workspace.yaml").read_text(encoding="utf-8")
         )
+        ablate = {
+            a.strip().replace("\\", "/").lstrip("./") for a in (config.ablate or [])
+        }
         scenario = cls._load_scenario(root, config)
-        manifest = cls._build_manifest(root, scenario)
-        return cls(root, workspace, scenario, manifest)
+        manifest = cls._build_manifest(root, scenario, ablate)
+        return cls(root, workspace, scenario, manifest, ablate)
 
     @staticmethod
     def _load_scenario(root: Path, config: RunConfig) -> Scenario:
@@ -132,7 +137,9 @@ class Vault:
         )
 
     @classmethod
-    def _build_manifest(cls, root: Path, scenario: Scenario) -> list[EvidenceFile]:
+    def _build_manifest(
+        cls, root: Path, scenario: Scenario, ablate: set[str]
+    ) -> list[EvidenceFile]:
         files: list[EvidenceFile] = []
         for subdir, pat, kind in _TELEMETRY_GLOBS:
             base = root / subdir
@@ -168,8 +175,12 @@ class Vault:
                             scenario,
                         )
                     )
-        # Hard guard: the answer key is never evidence.
-        return [f for f in files if "HIDDEN_TRUTH" not in f.relpath]
+        # Hard guard: the answer key is never evidence; --ablate hides files (honesty demo).
+        return [
+            f
+            for f in files
+            if "HIDDEN_TRUTH" not in f.relpath and f.relpath not in ablate
+        ]
 
     @classmethod
     def _make_entry(
@@ -402,3 +413,16 @@ class Vault:
         )
         body = "\n".join(f"{rel}:{ln}: {ts},{v:g}" for ln, ts, v in rows)
         return f"{summary}\n{body}"
+
+    # ---------- citation resolution (for the verifier, NOT the agent) ----------
+    def raw_text(self, source: str) -> str | None:
+        """Resolve a citation ('path' or 'path:line') to the real file's FULL text, or None if the
+        path is ablated, guarded, or missing. The verifier checks the snippet against this."""
+        m = re.match(r"^(.*?):\d+$", source.strip())
+        path = (m.group(1) if m else source.strip()).replace("\\", "/").lstrip("./")
+        if not path or "HIDDEN_TRUTH" in path or ".." in path or path in self.ablate:
+            return None
+        full = self.root / path
+        if not full.is_file():
+            return None
+        return full.read_text(encoding="utf-8", errors="replace")
