@@ -1,0 +1,24 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "biggy"
+version = "0.1.0"
+description = "Biggy - an AI on-call incident-investigation copilot (CLI)."
+readme = "README.md"
+requires-python = ">=3.11"
+keywords = ["incident", "sre", "investigation", "agent", "cli"]
+dependencies = [
+    "typer>=0.12",
+    "rich>=13.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.15"]
+
+[project.scripts]
+biggy = "biggy.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["biggy"]
