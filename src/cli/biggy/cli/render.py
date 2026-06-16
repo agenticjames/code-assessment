@@ -122,12 +122,33 @@ def _briefing(result: InvestigationResult, ledger: Ledger) -> Group:
                 expand=False,
             )
         )
+    if result.noise_dropped:
+        parts.append(
+            Panel(
+                "\n".join(
+                    f"- {escape(n.item)} [dim]-- {escape(n.reason)}[/]"
+                    for n in result.noise_dropped
+                ),
+                title="[bold]Noise dropped[/] [dim](considered, then dismissed)[/]",
+                border_style="dim",
+                expand=False,
+            )
+        )
     if result.recommended_action:
         parts.append(
             Panel(
                 escape(result.recommended_action),
                 title="[bold]Recommended action[/]",
                 border_style="yellow",
+                expand=False,
+            )
+        )
+    if result.stakeholder_note:
+        parts.append(
+            Panel(
+                escape(result.stakeholder_note),
+                title="[bold]Stakeholder update[/] [dim](paste-ready)[/]",
+                border_style="blue",
                 expand=False,
             )
         )

@@ -33,6 +33,23 @@ class EvidenceRef(BaseModel):
     )
 
 
+class NoiseItem(BaseModel):
+    """A signal the investigator deliberately dismissed as noise.
+
+    The design's "explicitly drop, don't silently ignore" rule (DESIGN §3.3 #5): a chronic/unrelated
+    alert that looked relevant but wasn't. Surfacing what was ruled OUT as noise is itself a trust
+    signal — the responder sees the agent considered and dismissed it, not that it missed it.
+    """
+
+    item: str = Field(
+        description="The dismissed signal, e.g. 'disk-space SEV4 on log-aggregator'."
+    )
+    reason: str = Field(
+        description="One line on why it is noise, e.g. 'chronic pre-incident alert, unrelated to "
+        "the 504 onset'."
+    )
+
+
 class Grounding(BaseModel):
     """Result of the deterministic citation verifier (computed by code, not the LLM)."""
 
@@ -112,4 +129,16 @@ class InvestigationResult(BaseModel):
     )
     recommended_action: str | None = Field(
         default=None, description="The single most useful next action."
+    )
+    stakeholder_note: str | None = Field(
+        default=None,
+        description="A short (2-4 sentence) plain-English update a responder could paste into the "
+        "incident channel: what is happening, customer impact, the current best understanding of "
+        "the cause WITH a confidence qualifier, and the next action. No jargon, no fabrication "
+        "beyond the evidence; hedge if the outcome is inconclusive.",
+    )
+    noise_dropped: list[NoiseItem] = Field(
+        default_factory=list,
+        description="Signals that looked relevant but were deliberately dismissed as noise (e.g. a "
+        "chronic/unrelated alert), each with a one-line reason. Shows what was ruled out, not missed.",
     )

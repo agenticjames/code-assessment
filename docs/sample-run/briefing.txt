@@ -1,71 +1,75 @@
 ┌─────────────────── Investigation briefing  (root cause) ────────────────────┐
 │ The rate-limiter configuration change (dep-7e2a) reduced the bucket size,   │
-│ causing a massive increase in Redis connection requests. This saturated the │
-│ shared Redis instance's connection pool, which in turn caused the checkout  │
-│ service to experience connection pool exhaustion and 504 errors.            │
+│ causing a surge in Redis connection requests that exhausted the shared      │
+│ Redis instance's connection pool. This prevented the checkout service from  │
+│ acquiring Redis connections, leading to the observed 504 errors.            │
 └────────── checkout is throwing 504s and customers are complaining ──────────┘
 ┌─ Grounding (deterministic citation verifier) ─┐
-│ 5/5 claims verified                           │
+│ 6/6 claims verified                           │
 └───────────────────────────────────────────────┘
 ┌───────────────────────────── Hypothesis 1 - H1 ─────────────────────────────┐
 │ service     rate-limiter                                                    │
 │ status      confirmed                                                       │
-│ confidence  1.00                                                            │
+│ confidence  0.95                                                            │
 │ statement   The rate-limiter configuration change (dep-7e2a) is incorrectly │
-│             throttling legitimate checkout traffic.                         │
-│ supporting  - The rate-limiter configuration change (dep-7e2a) was loaded   │
-│             at 14:45Z.                                                      │
+│             throttling legitimate checkout traffic by exhausting the shared │
+│             Redis connection pool.                                          │
+│ supporting  - The rate-limiter configuration change was applied at 14:45Z.  │
 │               telemetry/logs/rate-limiter.log:26 "ts=2026-06-16T14:45:01Z   │
 │             level=INFO  svc=rate-limiter msg="loaded config max_tokens=10"  │
 │             deploy=dep-7e2a window_seconds=1 burst=20 prev_max_tokens=100   │
 │             source=config-watch"                                            │
-│             - The rate-limiter began exhausting Redis connections due to    │
-│             more frequent refills.                                          │
-│               telemetry/logs/rate-limiter.log:28 "ts=2026-06-16T14:45:09Z   │
-│             level=DEBUG svc=rate-limiter msg="bucket refill tick"           │
-│             refilled=128 redis_conns=11 note="more frequent refills at      │
-│             smaller bucket size""                                           │
-│             - The shared Redis instance reached its max connection limit.   │
+│             - The rate-limiter began exhausting Redis connections           │
+│             immediately after the config change.                            │
+│               telemetry/logs/rate-limiter.log:43 "ts=2026-06-16T14:47:13Z   │
+│             level=ERROR svc=rate-limiter msg="failed to open redis          │
+│             connection" err="max number of clients reached" redis_conns=50" │
+│             - The shared Redis instance reached its maximum connection      │
+│             limit.                                                          │
 │               telemetry/captures/2026-06-16T1450Z-redis-cli-info.txt:11     │
 │             "rejected_connections:1442          # connections refused       │
 │             because maxclients (50) was reached"                            │
+│             - The checkout service experienced connection pool exhaustion   │
+│             as a result of the Redis saturation.                            │
+│               telemetry/logs/checkout.log:76 "ts=2026-06-16T14:47:08Z       │
+│             level=ERROR svc=checkout msg="timeout acquiring connection from │
+│             pool after 5000ms" req_id=req-7f3a10 component=conn-pool        │
+│             op=POST_/checkout"                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
-┌───────────────────────────── Hypothesis 2 - H2 ─────────────────────────────┐
-│ service        rate-limiter                                                 │
-│ status         ruled out                                                    │
-│ confidence     0.10                                                         │
-│ statement      The checkout service is experiencing connection pool         │
-│                exhaustion due to a dependency on the shared Redis instance. │
-│ ruled out      The checkout service's connection pool exhaustion was a      │
-│                downstream symptom of the rate-limiter's Redis connection    │
-│                saturation, not an independent failure of the checkout       │
-│                service.                                                     │
-│ contradicting  - The checkout service's connection pool exhaustion was a    │
-│                downstream symptom of the rate-limiter's Redis connection    │
-│                saturation.                                                  │
-│                  telemetry/logs/checkout.log:76 "ts=2026-06-16T14:47:08Z    │
-│                level=ERROR svc=checkout msg="timeout acquiring connection   │
-│                from pool after 5000ms" req_id=req-7f3a10                    │
-│                component=conn-pool op=POST_/checkout"                       │
-└─────────────────────────────────────────────────────────────────────────────┘
-┌───────────────────────────── Hypothesis 3 - H3 ─────────────────────────────┐
+┌───────────────────────────── Hypothesis 2 - H3 ─────────────────────────────┐
 │ service        orders-db                                                    │
 │ status         ruled out                                                    │
-│ confidence     0.00  [          ]                                           │
+│ confidence     0.05  [          ]                                           │
 │ statement      The orders-db migration (mig-0616) caused latent lock        │
 │                contention that persisted despite the rollback.              │
-│ ruled out      The orders-db latency metrics showed no sustained high       │
-│                latency or lock contention during the incident window.       │
-│ contradicting  - The orders-db remained healthy throughout the incident.    │
+│ ruled out      The orders-db latency metrics show no spike or sustained     │
+│                contention during the incident window.                       │
+│ contradicting  - The orders-db latency remained stable and low throughout   │
+│                the incident.                                                │
+│                  telemetry/metrics/orders_db_latency.csv:68                 │
+│                "telemetry/metrics/orders_db_latency.csv:68:                 │
+│                2026-06-16T14:50:00Z,21"                                     │
+│                - The database was confirmed healthy throughout the          │
+│                incident.                                                    │
 │                  telemetry/logs/checkout.log:98 "ts=2026-06-16T15:09:07Z    │
 │                level=DEBUG svc=checkout msg="orders-db query ok"            │
 │                req_id=health-251 stmt="SELECT 1" duration_ms=5              │
 │                component=db-client note="db healthy throughout""            │
 └─────────────────────────────────────────────────────────────────────────────┘
+┌──────────────── Noise dropped (considered, then dismissed) ─────────────────┐
+│ - payment-gateway healthcheck -- The logs confirm the payment-gateway       │
+│ healthcheck remained healthy throughout the incident.                       │
+└─────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────── Recommended action ─────────────────────────────┐
 │ Roll back the rate-limiter configuration change (dep-7e2a) to the previous  │
-│ state (max_tokens=100) and increase the Redis maxclients limit to           │
-│ accommodate the current traffic volume.                                     │
+│ max_tokens=100 setting to restore Redis connection availability.            │
+└─────────────────────────────────────────────────────────────────────────────┘
+┌───────────────────── Stakeholder update (paste-ready) ──────────────────────┐
+│ We have identified the root cause of the checkout 504 errors as an          │
+│ aggressive rate-limiter configuration change deployed at 14:45Z. This       │
+│ change caused the rate-limiter to exhaust the shared Redis connection pool, │
+│ preventing checkout requests from completing. We are proceeding with a      │
+│ rollback of the rate-limiter configuration to restore service.              │
 └─────────────────────────────────────────────────────────────────────────────┘
 tool calls: 8
 
@@ -73,8 +77,8 @@ ledger -> docs\sample-run\ledger.json
 ┌─────────── Scorecard — Scenario A (root_cause) ────────────┐
 │ top hypothesis      rate-limiter vs rate-limiter  PASS     │
 │ outcome             root_cause vs root_cause  PASS         │
-│ herring not chosen  orders-db (ruled_out, conf 0.00)  PASS │
-│ conf rate-limiter   1.00 vs >=0.7  PASS                    │
-│ conf orders-db      0.00 vs <=0.1  PASS                    │
-│ grounding           5/5 verified  PASS                     │
+│ herring not chosen  orders-db (ruled_out, conf 0.05)  PASS │
+│ conf rate-limiter   0.95 vs >=0.7  PASS                    │
+│ conf orders-db      0.05 vs <=0.1  PASS                    │
+│ grounding           6/6 verified  PASS                     │
 └──────────────────────── 6/6 checks ────────────────────────┘
