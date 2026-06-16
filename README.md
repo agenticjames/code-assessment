@@ -1,42 +1,51 @@
 # Biggy
 
-A monorepo-style workspace for the Biggy project.
+An AI on-call incident-investigation copilot. It takes a vague production incident, investigates a
+workspace of operational evidence, and produces a **briefing you can trust**: ranked hypotheses with
+calibrated confidence, the red herring ruled out *with a reason*, and every claim verified against
+its source by deterministic code. See [`docs/DESIGN.md`](docs/DESIGN.md) for the thesis and
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for how it's built.
 
 ## Layout
 
 ```
 biggy/
-├─ docs/          # Project documentation
+├─ docs/          # design · architecture · delivery plan · dataset · a recorded sample run
+├─ workspaces/    # the data vault — acme-checkout (topology, runbooks, telemetry, scenarios)
 └─ src/
-   ├─ web/        # Next.js admin dashboard (frontend) — see src/web/README.md
-   └─ lib/        # AI services (planned — not yet added)
+   ├─ cli/        # Python: the investigation engine + `biggy` CLI (Phase 1) — see src/cli/README.md
+   └─ web/        # Next.js app over the same engine (Phase 2) — see src/web/README.md
 ```
 
-| Package | Status | Description |
-|---|---|---|
-| [`src/web`](src/web) | ✅ active | Admin dashboard — Next.js 16, React 19, Tailwind v4, shadcn/ui |
-| `src/lib` | 🚧 planned | The AI side of the project |
+| Package | What |
+|---|---|
+| [`src/cli`](src/cli) | The engine + CLI: time-scoped evidence, an abductive (hypothesize → disconfirm → adjudicate) loop, a deterministic citation verifier, and an eval harness. **The runnable Phase 1.** |
+| [`src/web`](src/web) | Next.js + shadcn front end that triggers the engine and streams its reasoning (Phase 2). |
 
-## Quick start
+## Quick start — the CLI
 
-The frontend is the only package today. From the repository root:
+```powershell
+cd src/cli
+python -m venv .venv
+.venv\Scripts\Activate.ps1        # macOS/Linux: source .venv/bin/activate
+pip install -e ".[dev]"
+# create a repo-root .env with your GEMINI_API_KEY (see .env.example), then:
+biggy investigate "checkout is throwing 504s and customers are complaining" -s A --check
+```
+
+A recorded run is in [`docs/sample-run/`](docs/sample-run); the full guide is
+[`src/cli/README.md`](src/cli/README.md).
+
+## Quick start — the web app
 
 ```bash
 pnpm -C src/web install
-pnpm -C src/web dev        # http://localhost:3000
+pnpm -C src/web dev               # http://localhost:3000
 ```
 
-…or work inside the package directly:
-
-```bash
-cd src/web
-pnpm install
-pnpm dev
-```
-
-See [`src/web/README.md`](src/web/README.md) for the full frontend guide.
+See [`src/web/README.md`](src/web/README.md).
 
 ## Conventions
 
-- **Package manager:** [pnpm](https://pnpm.io).
-- **Each package under `src/` is self-contained** (its own `package.json`, dependencies, and config). When `src/lib` is added, a root pnpm workspace can be introduced to share tooling across packages.
+- **`src/cli`** is a pip/venv Python package (`pyproject.toml`); **`src/web`** is a pnpm/Node package.
+- Each package under `src/` is self-contained (its own manifest, dependencies, and config).

@@ -8,10 +8,21 @@ entrypoint that a future API surface can reuse unchanged. See
 
 from __future__ import annotations
 
+import sys
+
 import typer
 
 from biggy import __version__
-from biggy.commands import investigate, version
+from biggy.cli.commands import eval as eval_cmd
+from biggy.cli.commands import investigate, version
+
+# Render evidence text (em-dashes, arrows) without mojibake, and never raise on a legacy
+# Windows code page. No-op where the stream can't be reconfigured (e.g. under test capture).
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
 
 app = typer.Typer(
     name="biggy",
@@ -44,4 +55,5 @@ def main(
 
 # One module per command; each module exposes a plain function we register here.
 app.command("investigate")(investigate.investigate)
+app.command("eval")(eval_cmd.run_eval)
 app.command("version")(version.version)
