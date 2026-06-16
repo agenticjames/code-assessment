@@ -1,1 +1,10 @@
 docs/task/Biggy AI Engineer - Take-Home Assessment.md
+
+# Secrets — never commit API keys
+.env
+.env.*
+!.env.example
+
+# Engine run artifacts (when the CLI is run from the repo root)
+runs/
+out/

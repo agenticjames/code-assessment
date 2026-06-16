@@ -18,3 +18,11 @@ env/
 .mypy_cache/
 .coverage
 htmlcov/
+
+# Engine run artifacts
+runs/
+out/
+
+# Secrets (defensive; the root .gitignore also covers this)
+.env
+.env.*

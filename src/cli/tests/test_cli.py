@@ -1,8 +1,8 @@
-"""Smoke tests for the Biggy CLI scaffold (no engine, no network)."""
+"""CLI smoke tests — all offline (no LLM). The live engine path is covered by test_orchestrator."""
 
 from __future__ import annotations
 
-import json
+from pathlib import Path
 
 from typer.testing import CliRunner
 
@@ -10,6 +10,9 @@ from biggy import __version__
 from biggy.cli import app
 
 runner = CliRunner()
+
+# src/cli/tests/test_cli.py -> parents[3] is the repo root holding workspaces/.
+WORKSPACES = Path(__file__).resolve().parents[3] / "workspaces"
 
 
 def test_help_lists_commands() -> None:
@@ -31,18 +34,20 @@ def test_version_command() -> None:
     assert f"biggy {__version__}" in result.output
 
 
-def test_investigate_stub_renders_config() -> None:
+def test_errors_exit_2(tmp_path) -> None:
+    # An unknown scenario (or a missing key) surfaces as a clean exit code 2, not a traceback.
+    # Both failure modes short-circuit before any LLM call, so this stays offline.
     result = runner.invoke(
-        app, ["investigate", "checkout is throwing 504s", "--scenario", "A"]
+        app,
+        [
+            "investigate",
+            "checkout is throwing 504s",
+            "-s",
+            "ZZZ",
+            "--workspaces-root",
+            str(WORKSPACES),
+            "--out",
+            str(tmp_path),
+        ],
     )
-    assert result.exit_code == 0
-    assert "504s" in result.output
-    assert "acme-checkout" in result.output  # default workspace echoed
-
-
-def test_investigate_json_is_not_implemented() -> None:
-    result = runner.invoke(app, ["investigate", "x", "--json"])
-    assert result.exit_code == 0
-    payload = json.loads(result.output)
-    assert payload["status"] == "not_implemented"
-    assert payload["config"]["query"] == "x"
+    assert result.exit_code == 2

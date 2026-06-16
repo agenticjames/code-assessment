@@ -1,0 +1,108 @@
+"""``biggy investigate`` — run an incident investigation and print a grounded briefing.
+
+Thin shell: load ``.env``, build a ``RunConfig`` from flags, hand off to the engine, render.
+Heavy imports (engine, LangChain, dotenv) are deferred into the function so ``biggy --help`` and
+``biggy version`` stay fast and import-light.
+"""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+from typing import Optional
+
+import typer
+from rich.console import Console
+
+_out = Console()
+_err = Console(stderr=True)
+
+
+def investigate(
+    query: str = typer.Argument(
+        ...,
+        metavar="QUERY",
+        help='The incident report, e.g. "checkout is throwing 504s".',
+    ),
+    workspace: str = typer.Option(
+        "acme-checkout", "--workspace", "-w", help="Workspace to investigate within."
+    ),
+    scenario: Optional[str] = typer.Option(
+        None,
+        "--scenario",
+        "-s",
+        help="Scenario id (provides the incident time window), e.g. A.",
+    ),
+    provider: str = typer.Option(
+        "google_genai", "--provider", help="LLM provider (LangChain init_chat_model)."
+    ),
+    model: str = typer.Option(
+        "gemini-3.1-flash-lite", "--model", "-m", help="Model id for the provider."
+    ),
+    max_steps: int = typer.Option(
+        12, "--max-steps", min=1, help="Tool-loop step budget."
+    ),
+    out: Optional[Path] = typer.Option(
+        None,
+        "--out",
+        help="Directory to write ledger.json (default: runs/<incident-id>).",
+    ),
+    check: bool = typer.Option(
+        False,
+        "--check",
+        help="Grade the run against the scenario's HIDDEN_TRUTH answer key.",
+    ),
+    workspaces_root: Optional[Path] = typer.Option(
+        None,
+        "--workspaces-root",
+        hidden=True,
+        help="Override the workspaces/ root (else $BIGGY_WORKSPACES_ROOT or the in-repo default).",
+    ),
+) -> None:
+    """Investigate an incident from a vague report and print a grounded briefing."""
+    from dotenv import find_dotenv, load_dotenv
+
+    from biggy.engine.config import RunConfig
+    from biggy.engine.llm.client import ensure_google_key
+    from biggy.engine.orchestrator import investigate as run_investigation
+    from biggy.cli.render import render
+
+    load_dotenv(find_dotenv(usecwd=True))
+    ensure_google_key()
+    if not os.environ.get("GOOGLE_API_KEY"):
+        _err.print(
+            "[red]No API key found.[/] Put GEMINI_API_KEY (or GOOGLE_API_KEY) in a .env file "
+            "at the repo root (see .env.example)."
+        )
+        raise typer.Exit(code=2)
+
+    config = RunConfig(
+        query=query,
+        workspace=workspace,
+        scenario=scenario,
+        provider=provider,
+        model=model,
+        max_steps=max_steps,
+        out_dir=out,
+        workspaces_root=workspaces_root,
+    )
+
+    try:
+        result, ledger = run_investigation(config)
+    except (FileNotFoundError, ValueError) as exc:
+        _err.print(f"[red]{exc}[/]")
+        raise typer.Exit(code=2) from exc
+
+    render(result, ledger, config)
+
+    if check:
+        from biggy.eval.grade import grade, scorecard_panel
+        from biggy.engine.evidence.vault import Vault
+
+        ht = Vault.load(config).scenario.hidden_truth_path
+        if ht is None:
+            _err.print(
+                "[yellow]No HIDDEN_TRUTH.md for this scenario — cannot grade.[/]"
+            )
+        else:
+            _out.print(scorecard_panel(grade(ledger, ht)))
