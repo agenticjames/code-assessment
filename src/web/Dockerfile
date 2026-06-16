@@ -28,6 +28,10 @@ FROM base AS run
 WORKDIR /app
 ENV NODE_ENV=production
 ENV WORKSPACES_ROOT=/app/workspaces
+# Bind to all interfaces, not the Docker-assigned container-id hostname — otherwise Next's
+# standalone server (hostname = process.env.HOSTNAME || '0.0.0.0') listens on an interface the
+# Railway proxy can't reach. PORT is injected by Railway at runtime.
+ENV HOSTNAME=0.0.0.0
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
