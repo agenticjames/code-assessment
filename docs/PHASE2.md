@@ -6,7 +6,7 @@
 > CLI drives. It is a *living* document: implementation is checked against it, and the
 > **Progress log** (§11) is updated as phases land. Keep referring back to it.
 
-**Status:** building. **Branch:** `feat/engine-skeleton` (do **not** branch).
+**Status:** shipped — all phases P0–P8 landed and were browser-verified (see the Progress log, §11).
 **Maps to** `DELIVERY.md` Inc 6–8, with the durable store moved from Redis to Postgres (§2).
 
 ---
@@ -269,7 +269,7 @@ with `cli/render.py` so behavior can't drift:
 ## 7. Phases (each ends demoable; tracked as tasks; check off in §11)
 
 Vertical slices — a thin end-to-end thread lands at P4, then enriches. The static briefing UI
-parallelizes from P2 against the committed `runs/acme-checkout-A/ledger.json` sample.
+parallelizes from P2 against the committed sample ledger ([`docs/sample-run/ledger.json`](sample-run/ledger.json)).
 
 - **P0 — Foundations & contracts.** docker-compose (have it); `.env.example`; `lib/env.ts`;
   `lib/contracts.ts` ↔ `worker/contracts.py` + a parity test vs `trace.py` `EVENT_*`; web deps

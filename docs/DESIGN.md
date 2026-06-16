@@ -288,6 +288,10 @@ investigate "<query>"  --workspace acme-checkout  --scenario A
 
 ### 5.3 Phase 2 — shadcn web app + Redis
 
+> **As-built:** the shipped Phase 2 dropped FastAPI — **Next.js is the API/BFF** — and uses
+> **Postgres** as the durable store with **Redis** for queue + live trace (a Python worker runs the
+> engine). The sketch below is the original design; [`PHASE2.md`](PHASE2.md) is what was built.
+
 The engine wrapped in a thin API; the existing Next.js + shadcn app becomes the trigger + viewer.
 
 ```

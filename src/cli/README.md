@@ -110,6 +110,8 @@ src/cli/biggy/
 
 ## Roadmap
 
-Inc 0–2 (walking skeleton → abductive loop → trust layer) and the Inc 4 eval harness are done — see
-[`../../docs/DELIVERY.md`](../../docs/DELIVERY.md). Next: **Inc 5** (semantic cross-incident memory)
-and the **Phase 2** web app over the same engine.
+Phase 1 — **Inc 0–4** (walking skeleton → abductive loop → trust layer → live trace + briefing → eval
+harness) — is done, and **Phase 2** shipped too (Inc 6–8: the web app over this same engine). See
+[`../../docs/DELIVERY.md`](../../docs/DELIVERY.md) and [`../../docs/PHASE2.md`](../../docs/PHASE2.md).
+The one increment still ahead is **Inc 5** — semantic cross-incident memory (the
+`recall_similar_incidents` tool + the reserved `idx:incidents` vector index).

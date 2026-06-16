@@ -4,6 +4,13 @@
 >
 > Working name **Biggy**. No implementation code here — interfaces, contracts, and module shapes only.
 
+> **As-built note.** This is the *original* technical design. **Phase 1 shipped as described.**
+> **Phase 2 deliberately diverged** from §1 / §2 / §5 below: there is **no FastAPI tier** (the Next.js
+> app is the API/BFF), **Postgres** is the durable store, and **Redis** stays motion-only (queue +
+> live trace); one **Python worker** runs the engine. The as-built Phase 2 design — and *why FastAPI
+> was dropped* — is **[`PHASE2.md`](PHASE2.md)**. The canonical current repo layout is in the package
+> READMEs ([cli](../src/cli/README.md), [web](../src/web/README.md)).
+
 ---
 
 ## 1. Decisions at a glance
@@ -20,7 +27,7 @@
 | CLI | **Typer** (thin shell) + **`rich`** (live trace) | no logic in the CLI; engine is importable & reused by Phase 2 |
 | Retrieval | structured tools within-incident · **semantic index** cross-incident | embeddings only where keywords fail (incident memory) |
 | Graphs | topology + ledger, **in-memory** (no graph DB) | right-sized structured context |
-| Phase 2 | **FastAPI** wrapper + **Redis** (job/pub-sub/store/vector) + existing **Next.js + shadcn** | engine emits artifacts; web is a trigger + renderer |
+| Phase 2 *(as-built)* | **Next.js is the API/BFF** (no FastAPI) · **Redis** queue + live trace · **Postgres** durable store · one **Python worker** | engine emits artifacts; web is a trigger + renderer — see [`PHASE2.md`](PHASE2.md) |
 
 **The spine:** *own the brain (reasoning, prompts, verifier, ledger), buy the plumbing (provider abstraction, tool-call mechanics, streaming, tracing).*
 
@@ -202,7 +209,7 @@ The CLI is a thin shell; `--provider/--model` surface the seam; the engine is im
 
 ---
 
-## 5. Phase 2 — web app
+## 5. Phase 2 — web app  *(original plan — superseded by [`PHASE2.md`](PHASE2.md))*
 
 The engine wrapped in a thin API; the existing Next.js + shadcn app becomes trigger + viewer.
 

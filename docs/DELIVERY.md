@@ -110,6 +110,10 @@ BIG-BANG (horizontal layers)              AGILE (vertical slices)
 
 ## Phase 2 — the web app
 
+> **As-built:** Phase 2 shipped with a deliberately revised architecture — **no FastAPI** (Next.js is
+> the BFF), **Postgres** as the durable store, **Redis** for queue + live trace, one **Python worker**.
+> The increments below are the original plan; [`PHASE2.md`](PHASE2.md) is what was actually built.
+
 ### Inc 6 — Web Skeleton · `v0.7-web`
 - **Goal:** thinnest end-to-end *web* thread (walking skeleton, again).
 - **Demo:** in the browser, pick Scenario A → click **Investigate** → the final briefing appears (poll, no live stream yet).
