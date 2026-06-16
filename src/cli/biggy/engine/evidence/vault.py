@@ -4,9 +4,10 @@ Central Inc-0 responsibility: slice the shared ``telemetry/`` corpus to the inci
 ``[as_of - look_back, as_of]`` and **clamp to as_of** (no hindsight). Standing-world docs
 (topology, runbooks, ADRs) are timeless and returned whole.
 
-Selection (Inc 0): live telemetry (windowed) + standing ops docs. Deliberately excluded —
-``scenarios/**`` (frames + the HIDDEN_TRUTH answer key), chat/comms/tickets (Inc 1/3), and
-``incident-library/**`` (Inc 5 memory). ``HIDDEN_TRUTH.md`` is *never* exposed to the agent.
+Selection: live telemetry (windowed) + **comms** — the messy human signal (chat, customer
+tickets, status-page updates), windowed the same way but surfaced as a distinct, low-trust class
+— + standing ops docs. Deliberately excluded: ``scenarios/**`` (frames + the HIDDEN_TRUTH answer
+key) and ``incident-library/**`` (Inc 5 memory). ``HIDDEN_TRUTH.md`` is *never* exposed.
 """
 
 from __future__ import annotations
@@ -32,6 +33,16 @@ _TELEMETRY_SINGLES = [
     ("telemetry/alerts.jsonl", "jsonl"),
     ("telemetry/deploys.yaml", "deploys"),
 ]
+# The messy HUMAN signal — windowed like telemetry but a distinct, low-trust class (unverified;
+# leads + customer impact, NOT ground truth). chat/status are date-header + time-only; tickets
+# carry an inline ISO. Windowed by dedicated branches in ``_window_lines`` / ``_window_dated``.
+_COMMS_GLOBS = [
+    ("telemetry/chat", "*.md", "chat"),
+]
+_COMMS_SINGLES = [
+    ("telemetry/support-tickets.md", "tickets"),
+    ("telemetry/status-updates.md", "status"),
+]
 # (subdir | ".", glob, kind) for timeless standing-world docs.
 _STANDING_GLOBS = [
     ("topology", "*.yaml", "doc"),
@@ -43,7 +54,49 @@ _STANDING_GLOBS = [
     (".", "GLOSSARY.md", "doc"),
 ]
 _CAPTURE_TS = re.compile(r"(\d{4}-\d{2}-\d{2})T(\d{2})(\d{2})Z")
-_WINDOWED = {"log", "csv", "jsonl", "deploys"}
+# Comms timestamp shapes (see ``_window_dated`` and the tickets branch in ``_window_lines``).
+_DATE_HDR = re.compile(r"^##\s+(\d{4}-\d{2}-\d{2})")
+_CHAT_TS = re.compile(r"^\[(\d{2}):(\d{2})\]")
+_STATUS_TS = re.compile(r"^- (\d{2}):(\d{2}) \[")
+_TICKET_TS = re.compile(r"(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?Z")
+_CAT_LABELS = {
+    "telemetry": "telemetry",
+    "comms": "comms  (human signal: chat / tickets / status — UNVERIFIED; leads + impact, "
+    "corroborate against telemetry before trusting)",
+    "standing": "standing",
+}
+_WINDOWED = {"log", "csv", "jsonl", "deploys", "chat", "status", "tickets"}
+
+
+def _window_dated(
+    kind: str, lines: list[str], start: datetime, end: datetime
+) -> list[tuple[int, str]]:
+    """Window a date-header + time-only file (chat / status). The ``## YYYY-MM-DD`` header carries
+    down to each ``[HH:MM]`` (chat) / ``- HH:MM [`` (status) line; prose/blockquotes follow their
+    parent; the section header is emitted once before its first in-window line so the day stays
+    visible. ``parse_iso`` turns the combined ``date T time`` into the aware-UTC the window uses.
+    """
+    line_re = _CHAT_TS if kind == "chat" else _STATUS_TS
+    cur_date: str | None = None
+    pending_hdr: tuple[int, str] | None = None
+    keep_prev = False
+    out: list[tuple[int, str]] = []
+    for i, txt in enumerate(lines, 1):
+        d = _DATE_HDR.match(txt)
+        if d:
+            cur_date, pending_hdr, keep_prev = d.group(1), (i, txt), False
+            continue
+        m = line_re.match(txt)
+        if m and cur_date:
+            keep_prev = start <= parse_iso(f"{cur_date}T{m.group(1)}:{m.group(2)}:00") <= end
+            if keep_prev:
+                if pending_hdr:
+                    out.append(pending_hdr)
+                    pending_hdr = None
+                out.append((i, txt))
+        elif txt.strip() and keep_prev:  # prose / blockquote continuation follows its parent
+            out.append((i, txt))
+    return out
 
 
 @dataclass
@@ -162,6 +215,18 @@ class Vault:
         for rel, kind in _TELEMETRY_SINGLES:
             if (root / rel).is_file():
                 files.append(cls._make_entry(root, rel, kind, "telemetry", scenario))
+        for subdir, pat, kind in _COMMS_GLOBS:
+            base = root / subdir
+            for p in sorted(base.glob(pat)) if base.is_dir() else []:
+                if p.is_file():
+                    files.append(
+                        cls._make_entry(
+                            root, p.relative_to(root).as_posix(), kind, "comms", scenario
+                        )
+                    )
+        for rel, kind in _COMMS_SINGLES:
+            if (root / rel).is_file():
+                files.append(cls._make_entry(root, rel, kind, "comms", scenario))
         for subdir, pat, kind in _STANDING_GLOBS:
             base = root if subdir == "." else root / subdir
             for p in sorted(base.glob(pat)) if base.is_dir() else []:
@@ -244,6 +309,21 @@ class Vault:
                 ):  # keep structural lines + in-window entries
                     out.append((i, txt))
             return out
+        if kind in ("chat", "status"):  # date-header + time-only — carry the date down
+            return _window_dated(kind, lines, start, end)
+        if kind == "tickets":  # one inline ISO per line (seconds optional)
+            for i, txt in enumerate(lines, 1):
+                m = _TICKET_TS.search(txt)
+                if m is None:  # comment / blank / revenue-note: structural context, keep
+                    if not txt.strip() or txt.lstrip().startswith("#"):
+                        out.append((i, txt))
+                    continue
+                ts = parse_iso(
+                    f"{m.group(1)}T{m.group(2)}:{m.group(3)}:{m.group(4) or '00'}"
+                )
+                if start <= ts <= end:
+                    out.append((i, txt))
+            return out
         return list(enumerate(lines, 1))  # doc: whole file
 
     def _wlabel(self) -> str:
@@ -260,15 +340,22 @@ class Vault:
         cands = [a for a in self._allowed if a.endswith("/" + p)]
         return cands[0] if len(cands) == 1 else None
 
-    def list_evidence(self) -> str:
+    def list_evidence(
+        self, categories: tuple[str, ...] = ("telemetry", "comms", "standing")
+    ) -> str:
+        """The evidence catalogue. ``categories`` scopes what a phase sees: the hypothesize seed asks
+        for telemetry+standing only — hypotheses come from what CHANGED and the machine signal, while
+        comms are unverified human leads the TEST phase corroborates (seeding a hypothesis off hearsay
+        is exactly what we avoid). The agent-facing tool uses the default (all categories)."""
+        scoped = "telemetry + comms" if "comms" in categories else "telemetry"
         out = [
-            f"# Evidence manifest — telemetry sliced to {self._wlabel()}; standing docs are timeless"
+            f"# Evidence manifest — {scoped} sliced to {self._wlabel()}; standing docs are timeless"
         ]
-        for cat in ("telemetry", "standing"):
+        for cat in categories:
             group = [e for e in self.manifest if e.category == cat]
             if not group:
                 continue
-            out.append(f"\n## {cat}")
+            out.append(f"\n## {_CAT_LABELS[cat]}")
             for e in group:
                 span = (
                     f"  [{e.time_range[0]:%H:%M}–{e.time_range[1]:%H:%M}Z]"
@@ -277,6 +364,19 @@ class Vault:
                 )
                 out.append(f"- {e.relpath} ({e.kind}, {e.lines} lines){span}")
         return "\n".join(out)
+
+    def windowed(self, path: str) -> list[tuple[int, str]]:
+        """In-window ``(line_no, text)`` pairs for a manifest file (``[]`` if not readable). The
+        structured basis the deterministic comms pass reads (tickets / status), so it sees exactly
+        the same time-scoped slice the agent does."""
+        rel = self._normalize(path)
+        if rel is None:
+            return []
+        kind = next((e.kind for e in self.manifest if e.relpath == rel), "doc")
+        lines = (
+            (self.root / rel).read_text(encoding="utf-8", errors="replace").splitlines()
+        )
+        return self._window_lines(kind, lines, self.scenario.window)
 
     def read_evidence(self, path: str) -> str:
         rel = self._normalize(path)

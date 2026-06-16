@@ -251,6 +251,30 @@ So the "knowledge graph / structured context" criterion is met by the **right-si
 
 **Phase 2 payoff:** render the topology + the incident's **blast radius** as an actual graph (rate-limiter → redis → checkout lit up; the migration herring greyed out). That makes the graph *visible* to the reviewer for almost no cost — it's just drawing data we already have. It's the graph's equivalent of the clickable-citation payoff.
 
+### 4.9 Messy human/ops context (comms) — exposed, but as low-trust leads
+
+The assessment explicitly calls out *messy operational inputs* (chat transcripts, customer-impact
+notes). The corpus carries three: the Slack war room (`telemetry/chat/incidents.md`), the Zendesk
+queue (`support-tickets.md`), and the public status page (`status-updates.md`). They are exposed to
+the agent as a distinct **`comms` evidence class** — readable, searchable, citable, time-windowed like
+telemetry — but framed **UNVERIFIED**: leads + impact, not ground truth.
+
+The judgment is *where* they enter. Comms are **not** seeded into the hypothesize phase (hypotheses
+come from what *changed* + machine telemetry; seeding off hearsay is the trap), and the reasoning loop
+stays telemetry-disciplined. Instead a **deterministic comms pass** (`engine/comms.py`, a phase like
+the citation verifier — no LLM) turns them into two grounded briefing artifacts:
+
+- **Customer impact** — summarised from in-window tickets (count, severity, services, revenue), so the
+  stakeholder note carries real blast-radius instead of a guess.
+- **Status-page correction** — the public DRAFT cross-checked against the verdict; when it blames a
+  cause the evidence doesn't support, the briefing says *correct it before publishing*. This is the
+  "resist the human consensus" moment (the draft is the crystallised consensus), delivered by code.
+
+Hindsight is handled by the same `as_of` clamp as telemetry: the chat is authored so each scenario's
+*resolution* lands after its `as_of` — the wrong consensus and the dismissed-but-correct hint are
+in-window, the answer is not. (Reserved as a with-more-time upgrade: let the agent *reason* over comms
+in the loop — eval-gated, since on a weak model it perturbs the verdict.)
+
 ---
 
 ## 5. Architecture

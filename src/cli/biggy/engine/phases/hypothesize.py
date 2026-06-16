@@ -24,7 +24,7 @@ class Hypothesize:
         context = (
             f"Incident: {sc.query!r} (severity {sc.severity or 'unknown'}); as of "
             f"{sc.as_of:%Y-%m-%dT%H:%M}Z, window {sc.window[0]:%H:%M}-{sc.window[1]:%H:%M}Z.\n\n"
-            f"## Evidence manifest\n{inv.vault.list_evidence()}\n\n"
+            f"## Evidence manifest\n{inv.vault.list_evidence(categories=('telemetry', 'standing'))}\n\n"
             f"## Changes in the window\n{inv.vault.get_changes()}"
         )
         msgs = [

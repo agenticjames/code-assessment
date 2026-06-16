@@ -14,6 +14,7 @@ from biggy.engine.schemas import (
     Hypothesis,
     InvestigationResult,
     NoiseItem,
+    StatusCheck,
 )
 from biggy.eval.grade import grade
 
@@ -26,7 +27,12 @@ def _ev(source: str, claim: str = "c", snippet: str = "s") -> EvidenceRef:
     return EvidenceRef(claim=claim, snippet=snippet, source=source, verified=True)
 
 
-def _ledger(scenario: str, result: InvestigationResult, grounded: int) -> Ledger:
+def _ledger(
+    scenario: str,
+    result: InvestigationResult,
+    grounded: int,
+    status_check: StatusCheck | None = None,
+) -> Ledger:
     return Ledger(
         incident_id=f"acme-checkout-{scenario}",
         workspace="acme-checkout",
@@ -36,6 +42,7 @@ def _ledger(scenario: str, result: InvestigationResult, grounded: int) -> Ledger
         grounding=Grounding(
             claims_total=grounded, claims_verified=grounded, ungrounded=[]
         ),
+        status_check=status_check,
     )
 
 
@@ -97,7 +104,20 @@ def test_root_cause_scorecard_all_pass():
             ),
         ],
     )
-    card = grade(_ledger("A", res, 7), SCEN / "A-checkout-504" / "HIDDEN_TRUTH.md")
+    card = grade(
+        _ledger(
+            "A",
+            res,
+            7,
+            status_check=StatusCheck(
+                has_draft=True,
+                needs_correction=True,
+                draft_source="telemetry/status-updates.md:14",
+                verdict_cause="rate-limiter",
+            ),
+        ),
+        SCEN / "A-checkout-504" / "HIDDEN_TRUTH.md",
+    )
     assert card.outcome_kind == "root_cause"
     assert card.passed, _fails(card)
 

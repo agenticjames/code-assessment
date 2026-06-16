@@ -8,6 +8,15 @@ from biggy.engine.phases.adjudicate import Adjudicate
 from biggy.engine.phases.base import Phase, load_prompt
 from biggy.engine.phases.hypothesize import Hypothesize
 from biggy.engine.phases.investigate import Investigate
+from biggy.engine.phases.reconcile import Reconcile
 from biggy.engine.phases.verify import Verify
 
-__all__ = ["Adjudicate", "Hypothesize", "Investigate", "Phase", "Verify", "load_prompt"]
+__all__ = [
+    "Adjudicate",
+    "Hypothesize",
+    "Investigate",
+    "Phase",
+    "Reconcile",
+    "Verify",
+    "load_prompt",
+]

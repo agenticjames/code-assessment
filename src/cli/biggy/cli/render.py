@@ -16,7 +16,14 @@ from rich.text import Text
 
 from biggy.engine.config import RunConfig
 from biggy.engine.ledger import Ledger
-from biggy.engine.schemas import EvidenceRef, Grounding, Hypothesis, InvestigationResult
+from biggy.engine.schemas import (
+    CustomerImpact,
+    EvidenceRef,
+    Grounding,
+    Hypothesis,
+    InvestigationResult,
+    StatusCheck,
+)
 
 console = Console()
 
@@ -74,6 +81,37 @@ def _grounding_panel(g: Grounding) -> Panel:
     )
 
 
+def _impact_panel(im: CustomerImpact) -> Panel:
+    bits = [f"{im.ticket_count} support ticket(s)"]
+    if im.top_priority:
+        bits.append(f"top priority [bold]{escape(im.top_priority)}[/]")
+    if im.services:
+        bits.append("affected: " + escape(", ".join(im.services)))
+    if im.first_seen:
+        bits.append(f"first report {escape(im.first_seen)}")
+    body = "  |  ".join(bits)
+    if im.revenue_note:
+        body += f"\n[dim]{escape(im.revenue_note)}[/]"
+    return Panel(
+        body,
+        title="[bold]Customer impact[/] [dim](deterministic, from support tickets)[/]",
+        border_style="red",
+        expand=False,
+    )
+
+
+def _status_panel(sc: StatusCheck) -> Panel:
+    body = escape(sc.message or "")
+    if sc.draft_source:
+        body += f"\n[dim]draft: {escape(sc.draft_source)}[/]"
+    return Panel(
+        body,
+        title="[bold]Status-page correction[/] [dim](public draft vs evidence)[/]",
+        border_style="red",
+        expand=False,
+    )
+
+
 def _hypothesis_panel(h: Hypothesis, rank: int) -> Panel:
     t = Table(show_header=False, box=None, pad_edge=False)
     t.add_column(style="cyan", no_wrap=True)
@@ -111,6 +149,8 @@ def _briefing(result: InvestigationResult, ledger: Ledger) -> Group:
     ]
     if ledger.grounding is not None:
         parts.append(_grounding_panel(ledger.grounding))
+    if ledger.impact is not None and ledger.impact.ticket_count > 0:
+        parts.append(_impact_panel(ledger.impact))
     ranked = sorted(result.hypotheses, key=lambda h: -h.confidence)
     parts += [_hypothesis_panel(h, i) for i, h in enumerate(ranked, 1)]
     if result.open_questions:
@@ -143,6 +183,8 @@ def _briefing(result: InvestigationResult, ledger: Ledger) -> Group:
                 expand=False,
             )
         )
+    if ledger.status_check is not None and ledger.status_check.needs_correction:
+        parts.append(_status_panel(ledger.status_check))
     if result.stakeholder_note:
         parts.append(
             Panel(

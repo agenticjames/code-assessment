@@ -3,6 +3,9 @@ docs/task/Biggy AI Engineer - Take-Home Assessment.md
 # CLI run artifacts (the engine writes ledger.json + briefing here)
 runs/
 
+# Throwaway exploration/experiment scripts (not part of the engine)
+.scratch/
+
 # Secrets & local env — NEVER commit. .env.example is the tracked template.
 .env
 .env.*
