@@ -1,10 +1,5 @@
-import { PagePlaceholder } from "@/components/page-placeholder";
+import { redirect } from "next/navigation";
 
-export default function DashboardPage() {
-  return (
-    <PagePlaceholder
-      title="Dashboard"
-      description="Your overview will appear here."
-    />
-  );
+export default function Home() {
+  redirect("/investigations");
 }

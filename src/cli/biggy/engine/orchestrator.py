@@ -7,6 +7,8 @@ LangGraph port maps each phase to a node.
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from biggy.engine.config import RunConfig
 from biggy.engine.context import Investigation
 from biggy.engine.ledger import Ledger
@@ -21,9 +23,10 @@ def investigate(
     config: RunConfig,
     tracer: Tracer | None = None,
     pipeline: list[Phase] | None = None,
+    cancel_check: Callable[[], bool] | None = None,
 ) -> tuple[InvestigationResult, Ledger]:
     """Run the phase pipeline and return the verdict + the (serialisable) ledger."""
-    inv = Investigation.start(config, tracer)
+    inv = Investigation.start(config, tracer, cancel_check)
     for phase in pipeline or DEFAULT_PIPELINE:
         inv.tracer.phase(phase.name)
         phase.run(inv)

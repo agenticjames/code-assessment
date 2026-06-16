@@ -19,7 +19,7 @@ export const jobSchema = z.object({
   scenario: z.string().nullable(),
   provider: z.string().min(1),
   model: z.string().min(1),
-  max_steps: z.number().int().positive(),
+  max_steps: z.number().int().min(1).max(30),
 });
 export type Job = z.infer<typeof jobSchema>;
 

@@ -1,4 +1,5 @@
-"""CLI smoke tests — all offline (no LLM). The live engine path is covered by test_orchestrator."""
+"""CLI smoke tests — all offline (no LLM, no network). The live engine path is covered by
+``test_orchestrator`` (gated behind a Gemini key via the ``needs_llm`` fixture)."""
 
 from __future__ import annotations
 
@@ -34,9 +35,9 @@ def test_version_command() -> None:
     assert f"biggy {__version__}" in result.output
 
 
-def test_errors_exit_2(tmp_path) -> None:
-    # An unknown scenario (or a missing key) surfaces as a clean exit code 2, not a traceback.
-    # Both failure modes short-circuit before any LLM call, so this stays offline.
+def test_unknown_scenario_exits_2(tmp_path) -> None:
+    # An unknown scenario (or a missing key) surfaces as a clean exit code 2, not a traceback. It
+    # short-circuits in Vault.load before any LLM call, so this stays offline regardless of a key.
     result = runner.invoke(
         app,
         [

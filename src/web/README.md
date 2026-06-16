@@ -1,95 +1,82 @@
 # Biggy — Web
 
-The frontend for Biggy: an admin dashboard built with **Next.js** (App Router) and **shadcn/ui**.
+The Phase 2 web app: a thin **trigger + viewer** over the same investigation engine the CLI runs. It
+does **not** re-implement any reasoning — it enqueues a job, a Python worker runs the engine, and the
+browser streams the live trace and renders the grounded briefing. Architecture + plan:
+[`../../docs/PHASE2.md`](../../docs/PHASE2.md).
+
+## Architecture (motion vs memory)
+
+```
+Browser (React / shadcn)
+  │ Server Actions (enqueue) · EventSource (SSE, live trace) · RSC reads
+  ▼
+Next.js server  ── the API / BFF (no FastAPI) ───────────────────────────
+  │ XADD biggy:jobs        │ Drizzle reads        │ SSE relay (XREAD)
+  ▼                        ▼                      ▲
+Redis (motion)          Postgres (memory)      Worker (Python) — imports `biggy`,
+queue · trace stream    jobs · audit · history  runs investigate(), writes PG + streams Redis
+```
+
+- **Redis** carries the run while it happens (job queue · live trace stream · cancel flag).
+- **Postgres** is the durable record (jobs + lifecycle, tool-call audit, trace, citations, history).
+- **Next is the API** — it talks to Redis + Postgres directly; the only Python process is the worker.
 
 ## Tech stack
 
-| | |
-|---|---|
-| Framework | [Next.js 16](https://nextjs.org) (App Router, Turbopack) |
-| UI library | React 19 |
-| Styling | [Tailwind CSS v4](https://tailwindcss.com) |
-| Components | [shadcn/ui](https://ui.shadcn.com) — `base-nova` style, built on [Base UI](https://base-ui.com) |
-| Icons | [lucide-react](https://lucide.dev) |
-| Language | TypeScript |
-| Package manager | [pnpm](https://pnpm.io) |
+Next.js 16 (App Router, Turbopack) · React 19 · Tailwind v4 · shadcn/ui (`base-nova`, Base UI) ·
+Drizzle ORM (postgres-js) · ioredis · zod · TypeScript · pnpm.
 
-## Getting started
+## Run (needs the full stack)
 
-Prerequisites: Node.js 20+ and pnpm 9+.
+From the repo root (Redis + Postgres + the worker must be up):
 
 ```bash
-# from this directory (src/web)
-pnpm install
-pnpm dev          # http://localhost:3000
-```
-
-Or from the repository root, target this package with `-C`:
-
-```bash
+docker compose up -d                  # Redis + Postgres
 pnpm -C src/web install
-pnpm -C src/web dev
+pnpm -C src/web db:push               # apply the Drizzle schema
+python -m biggy.worker                # consume jobs (set BIGGY_FAKE_RUN=1 for a keyless demo)
+pnpm -C src/web dev                   # http://localhost:3000/investigations
 ```
+
+`.env.local` here holds `DATABASE_URL` + `REDIS_URL` (defaults match `docker-compose.yml`).
 
 ## Scripts
 
 | Command | Description |
 |---|---|
-| `pnpm dev` | Start the dev server (Turbopack) |
-| `pnpm build` | Production build |
+| `pnpm dev` | Dev server (Turbopack) |
+| `pnpm build` | Production build (standalone output) |
 | `pnpm start` | Serve the production build |
-| `pnpm lint` | Run ESLint |
+| `pnpm lint` · `pnpm typecheck` | ESLint · `tsc --noEmit` |
+| `pnpm db:push` / `db:generate` | Apply / generate Drizzle migrations |
 
-## Project structure
+## Structure
 
 ```
 src/web/
-├─ app/                     # App Router
-│  ├─ layout.tsx            # Root layout: providers + sidebar/header shell
-│  ├─ page.tsx             # Dashboard (stat cards + recent orders)
-│  ├─ globals.css          # Tailwind v4 + shadcn theme tokens
-│  └─ <section>/page.tsx   # orders, products, customers, analytics, settings
-├─ components/
-│  ├─ app-sidebar.tsx       # Sidebar navigation + user menu
-│  ├─ site-header.tsx       # Top bar + dynamic breadcrumb
-│  ├─ page-placeholder.tsx  # Shared empty-state for section pages
-│  └─ ui/                   # shadcn/ui primitives
-├─ hooks/                   # use-mobile, …
-├─ lib/                     # utils (cn), …
-└─ public/                  # static assets
+├─ app/
+│  ├─ investigations/page.tsx          # list + composer (RSC)
+│  ├─ investigations/[id]/page.tsx     # detail shell → <LiveRun/>
+│  └─ api/{investigations/[id]/events, source, topology, healthz}/route.ts
+├─ components/investigations/          # composer, briefing, hypothesis-card, citation, live-run,
+│                                      # trace-panel, source-viewer, blast-radius, …
+├─ components/ui/                      # shadcn/ui primitives
+├─ lib/                                # contracts (zod) · db (Drizzle) · redis · workspace · actions · format
+└─ hooks/use-event-stream.ts           # SSE subscription
 ```
 
-## Routes
+## Contracts (DRY)
 
-| Route | Page |
-|---|---|
-| `/` | Dashboard — stat cards + recent orders table |
-| `/orders` | Orders (placeholder) |
-| `/products` | Products (placeholder) |
-| `/customers` | Customers (placeholder) |
-| `/analytics` | Analytics (placeholder) |
-| `/settings` | Settings (placeholder) |
+[`lib/contracts.ts`](lib/contracts.ts) (zod) mirrors the Python sources of truth —
+`biggy/engine/schemas.py` (briefing shape) and `biggy/engine/trace.py` (trace-event union). A
+cross-language parity test (`src/cli/tests/test_contract_parity.py`) fails if they drift.
 
-The sidebar highlights the active route via `usePathname`, and the header breadcrumb is derived from the current path.
+> **shadcn note:** this is the `base-nova` style (Base UI), not Radix — polymorphism uses the
+> **`render` prop**, not `asChild`.
 
-## Working with components
+## Deploy
 
-Add more shadcn/ui components with:
-
-```bash
-pnpm dlx shadcn@latest add <component>   # e.g. dialog, chart, input
-```
-
-> **Note — this is the `base-nova` style (Base UI), not Radix.** Polymorphism uses the
-> **`render` prop**, not `asChild`. For example, to render a nav button as a link:
->
-> ```tsx
-> <SidebarMenuButton render={<Link href="/orders" />}>…</SidebarMenuButton>
-> ```
-
-The `@/*` import alias maps to this package root (`src/web/*`), e.g. `@/components/ui/button`.
-
-## Deployment
-
-This app lives in a subdirectory. When deploying (e.g. to Vercel), set the project's
-**Root Directory** to `src/web`.
+`output: "standalone"` + [`Dockerfile`](Dockerfile) (build from the repo root). Provide
+`DATABASE_URL`, `REDIS_URL`, and `WORKSPACES_ROOT` at runtime; the worker deploys from
+[`../cli/Dockerfile`](../cli/Dockerfile).

@@ -11,7 +11,7 @@ from dataclasses import dataclass
 
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 
-from biggy.engine.context import Investigation
+from biggy.engine.context import Investigation, InvestigationCancelled
 from biggy.engine.phases.base import load_prompt
 
 
@@ -37,6 +37,8 @@ class Investigate:
         tool_map = inv.tool_map
 
         for step in range(1, inv.config.max_steps + 1):
+            if inv.should_cancel():
+                raise InvestigationCancelled()
             ai = model.invoke(inv.transcript)
             inv.transcript.append(ai)
             calls = getattr(ai, "tool_calls", None) or []
@@ -58,6 +60,7 @@ class Investigate:
                     ) as exc:  # feed tool errors back to the agent, don't crash
                         out = f"ERROR running {name}: {exc}"
                 inv.ledger.record_tool(step, name, args, out)
+                inv.tracer.tool_result(step, name, out)
                 inv.transcript.append(
                     ToolMessage(content=out, tool_call_id=call.get("id") or name)
                 )

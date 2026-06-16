@@ -5,6 +5,7 @@ import "./globals.css";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 const montserrat = Montserrat({
@@ -18,8 +19,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Biggy Admin",
-  description: "An admin dashboard scaffolded with Next.js and shadcn/ui.",
+  title: "Biggy — Incident Investigator",
+  description: "An AI on-call incident-investigation copilot: grounded, calibrated, cited.",
 };
 
 export default function RootLayout({
@@ -44,6 +45,7 @@ export default function RootLayout({
             </SidebarInset>
           </SidebarProvider>
         </TooltipProvider>
+        <Toaster />
       </body>
     </html>
   );

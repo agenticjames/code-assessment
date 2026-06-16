@@ -36,11 +36,18 @@ biggy investigate "checkout is throwing 504s and customers are complaining" -s A
 A recorded run is in [`docs/sample-run/`](docs/sample-run); the full guide is
 [`src/cli/README.md`](src/cli/README.md).
 
-## Quick start — the web app
+## Quick start — the web app (Phase 2)
+
+The web app drives the **same engine** the CLI does, via a Redis queue + a Postgres store and a
+Python worker. Architecture + build plan: [`docs/PHASE2.md`](docs/PHASE2.md).
 
 ```bash
-pnpm -C src/web install
-pnpm -C src/web dev               # http://localhost:3000
+docker compose up -d                                 # Redis :6380 + Postgres :5433 (healthchecked)
+cp .env.example .env                                  # set GEMINI_API_KEY — or BIGGY_FAKE_RUN=1 for a keyless demo
+pip install -e "src/cli[worker]"                      # engine + worker deps (redis, psycopg)
+pnpm -C src/web install && pnpm -C src/web db:push    # apply the Drizzle schema
+python -m biggy.worker                                # terminal 1: consume biggy:jobs
+pnpm -C src/web dev                                   # terminal 2: http://localhost:3000/investigations
 ```
 
 See [`src/web/README.md`](src/web/README.md).

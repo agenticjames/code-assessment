@@ -4,13 +4,12 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Activity,
   BadgeCheck,
   Bell,
   ChevronsUpDown,
   CreditCard,
-  LayoutDashboard,
   LogOut,
-  Settings,
 } from "lucide-react";
 
 import { Logo } from "@/components/logo";
@@ -35,9 +34,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-const navMain = [{ title: "Dashboard", url: "/", icon: LayoutDashboard }];
-
-const navSecondary = [{ title: "Settings", url: "/settings", icon: Settings }];
+const navMain = [{ title: "Investigations", url: "/investigations", icon: Activity }];
 
 const user = {
   name: "James Walker",
@@ -84,22 +81,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenu>
         </SidebarGroup>
 
-        <SidebarGroup className="mt-auto">
-          <SidebarMenu>
-            {navSecondary.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton
-                  render={<Link href={item.url} />}
-                  isActive={pathname === item.url}
-                  tooltip={item.title}
-                >
-                  <item.icon />
-                  <span>{item.title}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter>

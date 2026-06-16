@@ -6,6 +6,7 @@ state; ``transcript`` is the running LangChain message list the test loop builds
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -20,6 +21,10 @@ from biggy.engine.llm.client import LLMClient
 from biggy.engine.trace import Tracer
 
 
+class InvestigationCancelled(Exception):
+    """Raised between steps when a cancel signal is observed; the worker marks the run canceled."""
+
+
 @dataclass
 class Investigation:
     """What every phase operates on. Phases read these and mutate ``ledger`` (+ ``transcript``)."""
@@ -31,13 +36,24 @@ class Investigation:
     ledger: Ledger
     tools: list[BaseTool]
     transcript: list[Any] = field(default_factory=list)
+    # Injected by the worker (reads Redis ``cancel:{id}``); the CLI leaves it None (no-op).
+    cancel_check: Callable[[], bool] | None = None
 
     @property
     def tool_map(self) -> dict[str, BaseTool]:
         return {t.name: t for t in self.tools}
 
+    def should_cancel(self) -> bool:
+        """True if a cancel signal is set. Checked between steps in the test loop."""
+        return bool(self.cancel_check and self.cancel_check())
+
     @classmethod
-    def start(cls, config: RunConfig, tracer: Tracer | None = None) -> "Investigation":
+    def start(
+        cls,
+        config: RunConfig,
+        tracer: Tracer | None = None,
+        cancel_check: Callable[[], bool] | None = None,
+    ) -> "Investigation":
         tracer = tracer or Tracer()
         vault = Vault.load(config)
         sc = vault.scenario
@@ -57,4 +73,5 @@ class Investigation:
             tracer=tracer,
             ledger=ledger,
             tools=make_tools(vault),
+            cancel_check=cancel_check,
         )

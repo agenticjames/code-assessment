@@ -1,10 +1,9 @@
 docs/task/Biggy AI Engineer - Take-Home Assessment.md
 
-# Secrets — never commit API keys
+# CLI run artifacts (the engine writes ledger.json + briefing here)
+runs/
+
+# Secrets & local env — NEVER commit. .env.example is the tracked template.
 .env
 .env.*
 !.env.example
-
-# Engine run artifacts (when the CLI is run from the repo root)
-runs/
-out/

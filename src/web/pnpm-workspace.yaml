@@ -1,3 +1,6 @@
+# pnpm v11 blocks dependency build scripts by default. These ship native / prebuilt binaries that
+# need their install scripts to run (esbuild → drizzle-kit; sharp → next/image; unrs-resolver → eslint).
 allowBuilds:
+  esbuild: true
   sharp: true
   unrs-resolver: true

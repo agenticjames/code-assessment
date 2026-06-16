@@ -1,0 +1,41 @@
+# Local dev infra for Phase 2 (docs/PHASE2.md §6). Redis = motion, Postgres = memory.
+# `docker compose up -d` → redis :6379, postgres :5432. Data persists in the named volume.
+# Note: the reserved `idx:incidents` vector index (engine Inc 5) would need redis-stack;
+# plain redis is sufficient for the queue + trace stream + cancel flag built in Phase 2.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: biggy-postgres
+    environment:
+      POSTGRES_USER: biggy
+      POSTGRES_PASSWORD: biggy
+      POSTGRES_DB: biggy
+    ports:
+      # Host 5433 (not 5432) so we coexist with any local/other Postgres on the standard port.
+      - "5433:5432"
+    volumes:
+      - biggy_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U biggy -d biggy"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: biggy-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      # Host 6380 (not 6379) so we coexist with any local/other Redis on the standard port.
+      - "6380:6379"
+    volumes:
+      - biggy_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  biggy_pg:
+  biggy_redis:

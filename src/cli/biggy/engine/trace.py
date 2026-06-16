@@ -81,7 +81,9 @@ class RichSink:
                 )
         elif event_type == EVENT_TOOL_CALL:
             a = ", ".join(f"{k}={v!r}" for k, v in (data.get("args") or {}).items())
-            _console.print(f"[dim]  step {data['step']}[/] [cyan]{data['name']}[/]({a})")
+            _console.print(
+                f"[dim]  step {data['step']}[/] [cyan]{data['name']}[/]({a})"
+            )
         elif event_type == EVENT_THINKING_DONE:
             _console.print(
                 f"[dim]  step {data['step']}: done gathering — emitting verdict[/]"
