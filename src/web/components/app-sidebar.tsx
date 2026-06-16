@@ -4,20 +4,16 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Activity,
   BadgeCheck,
   Bell,
   ChevronsUpDown,
-  Command,
   CreditCard,
   LayoutDashboard,
   LogOut,
-  Package,
   Settings,
-  ShoppingCart,
-  Users,
 } from "lucide-react";
 
+import { Logo } from "@/components/logo";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -33,20 +29,13 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-const navMain = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Orders", url: "/orders", icon: ShoppingCart },
-  { title: "Products", url: "/products", icon: Package },
-  { title: "Customers", url: "/customers", icon: Users },
-  { title: "Analytics", url: "/analytics", icon: Activity },
-];
+const navMain = [{ title: "Dashboard", url: "/", icon: LayoutDashboard }];
 
 const navSecondary = [{ title: "Settings", url: "/settings", icon: Settings }];
 
@@ -65,12 +54,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" render={<Link href="/" />}>
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Command className="size-4" />
-              </div>
+              <Logo className="size-8 shrink-0" />
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">Biggy</span>
-                <span className="truncate text-xs text-muted-foreground">
+                <span className="truncate text-xs text-sidebar-foreground/70">
                   Admin
                 </span>
               </div>
@@ -81,7 +68,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Platform</SidebarGroupLabel>
           <SidebarMenu>
             {navMain.map((item) => (
               <SidebarMenuItem key={item.title}>
@@ -133,7 +119,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
                       <span className="truncate font-semibold">{user.name}</span>
-                      <span className="truncate text-xs text-muted-foreground">
+                      <span className="truncate text-xs text-sidebar-foreground/70">
                         {user.email}
                       </span>
                     </div>

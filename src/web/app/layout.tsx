@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Montserrat, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 import { AppSidebar } from "@/components/app-sidebar";
@@ -7,7 +7,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-const geistSans = Geist({
+const montserrat = Montserrat({
   variable: "--font-sans",
   subsets: ["latin"],
 });
@@ -30,7 +30,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      className={`${montserrat.variable} ${geistMono.variable} antialiased`}
     >
       <body>
         <TooltipProvider>
