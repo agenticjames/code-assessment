@@ -17,6 +17,10 @@ if TYPE_CHECKING:
     from biggy.engine.evidence.vault import Vault
 
 _WS = re.compile(r"\s+")
+# Tools prefix each line with its location ("telemetry/x.csv:41: ..." or "59\t..."). The agent
+# often copies that whole line into the snippet, so strip the prefix before matching — an honest
+# copy of tool output then verifies, while a fabricated line still isn't found in the source.
+_TOOL_PREFIX = re.compile(r"^\s*(?:[\w./-]+:\d+(?:-\d+)?:\s*|\d+\s*[:\t]\s*)")
 
 
 def _norm(text: str) -> str:
@@ -25,10 +29,18 @@ def _norm(text: str) -> str:
 
 
 def snippet_in_source(snippet: str, source_text: str | None) -> bool:
-    """True iff the normalised snippet is a substring of the normalised cited source text."""
+    """True iff every non-empty line of the snippet appears in the cited source.
+
+    Robust to two honest artefacts — the agent copying the tool's ``path:line:`` / line-number
+    prefix into the quote, and multi-line quotes — while staying strict on content: a fabricated
+    line is still not found in the source after its prefix is stripped.
+    """
     if not source_text or not snippet or not snippet.strip():
         return False
-    return _norm(snippet) in _norm(source_text)
+    src = _norm(source_text)
+    lines = [_norm(_TOOL_PREFIX.sub("", ln)) for ln in snippet.splitlines()]
+    lines = [ln for ln in lines if ln]
+    return bool(lines) and all(ln in src for ln in lines)
 
 
 def verify_citations(result: InvestigationResult, vault: "Vault") -> Grounding:

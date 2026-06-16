@@ -13,6 +13,7 @@ import sys
 import typer
 
 from biggy import __version__
+from biggy.cli.commands import eval as eval_cmd
 from biggy.cli.commands import investigate, version
 
 # Render evidence text (em-dashes, arrows) without mojibake, and never raise on a legacy
@@ -54,4 +55,5 @@ def main(
 
 # One module per command; each module exposes a plain function we register here.
 app.command("investigate")(investigate.investigate)
+app.command("eval")(eval_cmd.run_eval)
 app.command("version")(version.version)
