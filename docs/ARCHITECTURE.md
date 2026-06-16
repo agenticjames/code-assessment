@@ -113,10 +113,10 @@ We deliberately **own this loop** (not Gemini's automatic-function-calling, not 
 
 A thin module over LangChain so the engine never imports a provider SDK directly:
 
-- `client.py` — wraps `init_chat_model(f"{provider}:{model}")`. Exposes:
-  - `structured(messages, schema) -> PydanticObj` — via `.with_structured_output(schema)`, with one validation-retry.
-  - `with_tools(tools) -> runnable` — via `.bind_tools(tools)` for the loop.
-  - `stream(...)` — for the live trace.
+- `client.py` — wraps `init_chat_model(f"{provider}:{model}")` behind a resilience seam. Exposes:
+  - `bind_tools(tools) -> runnable` — via `.bind_tools(tools)` for the loop; each `.invoke` retries transient provider errors (429 / 5xx / timeouts) with exponential backoff + jitter, so one hiccup mid-loop doesn't sink the run.
+  - `structured(schema) -> runnable` — via `.with_structured_output(schema, include_raw=True)`; same transient backoff **plus** a bounded *repair* loop that feeds a schema-violating verdict's validation error back to the model to self-correct (a blind retry at temp 0 would just reproduce the bad output). Exhausting either budget raises `StructuredOutputError`, which the worker turns into a clean failed run.
+  - Transient classification is provider-agnostic (HTTP status / class name / message), so no vendor SDK leaks into the engine; budgets are `RetryPolicy` (ops-tunable via `BIGGY_LLM_MAX_ATTEMPTS` / `BIGGY_LLM_MAX_REPAIRS`). Residual gaps (job-level retry / DLQ, circuit breaker, provider failover) are named in [`PHASE2.md`](PHASE2.md) §10.
 - `fake.py` — a **scripted fake model** returning canned tool-calls / structured objects. This is the *second implementation* that validates the interface is provider-shaped-correctly, **and** it's the backbone of deterministic, offline, API-free unit tests of the orchestrator, phases, eval harness, and demo reproducibility.
 - **Provider swap** = change the `--provider/--model` flag (or config). No engine changes — delivers the "plug any AI" goal essentially for free.
 - **LangSmith** = set `LANGCHAIN_TRACING_V2` + `LANGSMITH_API_KEY` env vars; traces appear with zero code.
