@@ -1,7 +1,7 @@
 # Biggy web — Next.js (standalone output). Build from the REPO ROOT (it needs workspaces/ for
 # the /api/source + /api/topology routes):
 #   docker build -f src/web/Dockerfile -t biggy-web .
-FROM node:20-slim AS base
+FROM node:24-slim AS base
 ENV PNPM_HOME=/pnpm
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
@@ -15,6 +15,9 @@ FROM base AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY src/web/ ./
+# Next.js standalone output ships public/ separately (copied in the run stage). This app
+# carries no static assets, so guarantee the dir exists to keep that COPY valid and future-proof.
+RUN mkdir -p public
 # Dummy values so env validation passes at build time (no connection is made); the real
 # DATABASE_URL / REDIS_URL are injected at runtime.
 ENV DATABASE_URL="postgres://build:build@localhost:5432/build"
