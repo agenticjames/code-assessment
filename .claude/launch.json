@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "biggy-dev",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["-C", "src/web", "run", "dev"],
+      "port": 3000
+    }
+  ]
+}
