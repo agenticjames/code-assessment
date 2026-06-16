@@ -1,19 +1,21 @@
 # Biggy CLI (`biggy`)
 
-The Python command-line surface for **Biggy** — an AI on-call incident-investigation copilot.
-Phase 1 of the project (see [`../../docs/DESIGN.md`](../../docs/DESIGN.md),
+The Python engine + command-line surface for **Biggy** — an AI on-call incident-investigation
+copilot (see [`../../docs/DESIGN.md`](../../docs/DESIGN.md),
 [`../../docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md), [`../../docs/DELIVERY.md`](../../docs/DELIVERY.md)).
 
-> **Status: Inc 0 — walking skeleton.** `investigate` runs a real, end-to-end investigation: it
-> loads a workspace, time-scopes the evidence to the incident window, runs a bounded LLM tool-loop
-> (LangChain + Gemini) over read-only evidence tools, and prints a grounded briefing with
-> line-anchored citations, writing a `ledger.json`. Multi-hypothesis disconfirmation (rule out the
-> red herring) and the deterministic citation verifier land in Inc 1 / Inc 2.
+`investigate` runs a real, end-to-end investigation: it loads a workspace, **time-scopes the
+evidence** to the incident window (clamped to `as_of` — no hindsight), runs a bounded LLM tool-loop
+(**hypothesize → test/disconfirm → adjudicate**) over read-only evidence tools, then a **deterministic
+citation verifier** re-opens every cited source and confirms the quote is real. The output is a
+grounded briefing with line-anchored citations and an `N/N verified` badge, plus a `ledger.json`.
+`biggy eval` scores the engine across scenarios against hidden answer keys. See a recorded run in
+[`../../docs/sample-run/`](../../docs/sample-run).
 
 ## Requirements
 
 - Python **3.11+**.
-- A **Gemini API key** (the default provider is `google_genai`).
+- A **Gemini API key** (default provider `google_genai`). Offline tests run without one.
 
 ## Install
 
@@ -28,8 +30,7 @@ pip install -e ".[dev]"
 
 ```bash
 # macOS / Linux
-python -m venv .venv
-source .venv/bin/activate
+python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 ```
 
@@ -51,11 +52,14 @@ GEMINI_API_KEY=your-key-here          # mapped to GOOGLE_API_KEY automatically
 biggy --help
 biggy version
 
-# investigate scenario A (writes runs/<id>/ledger.json)
-biggy investigate "checkout is throwing 504s and customers are complaining" -s A
-
-# also grade the run against the scenario's HIDDEN_TRUTH answer key
+# investigate scenario A; --check grades it against the hidden answer key
 biggy investigate "checkout is throwing 504s and customers are complaining" -s A --check
+
+# honesty demo: hide the smoking-gun evidence and watch the verifier flag the over-reach
+biggy investigate "checkout is throwing 504s ..." -s A --ablate telemetry/logs/redis.log
+
+# I-measure-my-agent: score the engine across scenarios (try -m to compare models)
+biggy eval -s A -s B -s C -s E
 ```
 
 Run as a module without the console script: `python -m biggy --help`.
@@ -65,13 +69,17 @@ Run as a module without the console script: `python -m biggy --help`.
 | Option | Default | Meaning |
 |---|---|---|
 | `QUERY` (arg) | — | the incident report / question |
-| `--workspace`, `-w` | `acme-checkout` | workspace to investigate within |
 | `--scenario`, `-s` | — | scenario id (provides the incident time window), e.g. `A` |
+| `--workspace`, `-w` | `acme-checkout` | workspace to investigate within |
 | `--provider` | `google_genai` | LLM provider (LangChain `init_chat_model`) |
-| `--model`, `-m` | `gemini-3.1-flash-lite` | model id |
+| `--model`, `-m` | `gemini-3.1-flash-lite` | model id (the eval sweep found flash models best here) |
 | `--max-steps` | `12` | tool-loop step budget |
 | `--out` | `runs/<id>` | directory for `ledger.json` |
 | `--check` | off | grade the run vs `HIDDEN_TRUTH` |
+| `--ablate PATH` | — | hide an evidence path from the agent (repeatable; honesty demo) |
+
+`biggy eval` takes `-s/--scenario` (repeatable; default = all discovered), `-m/--model`, and
+`--no-detail` (summary matrix only).
 
 ## Develop & test
 
@@ -82,26 +90,26 @@ ruff check . && ruff format --check .
 
 ## Layout
 
+The package is layered so the **engine is surface-agnostic** (it imports no surface); the CLI and a
+future API are thin shells over it.
+
 ```
-src/cli/
-├─ pyproject.toml        # metadata + deps; defines the `biggy` script
-├─ biggy/
-│  ├─ cli.py             # Typer app + help; registers commands
-│  ├─ commands/          # one module per command (investigate, version)
-│  ├─ config.py          # RunConfig + workspace-root resolution
-│  ├─ vault.py           # workspace/scenario loading + time-scoped evidence
-│  ├─ tools/             # read-only evidence tools (list_evidence/read_file/search)
-│  ├─ llm/               # provider-abstracted chat client (init_chat_model)
-│  ├─ orchestrator.py    # the bounded tool-loop
-│  ├─ schemas.py         # Pydantic verdict contracts
-│  ├─ ledger.py          # the investigation ledger -> ledger.json
-│  ├─ render.py          # rich terminal briefing
-│  └─ eval/              # --check grader vs HIDDEN_TRUTH
-└─ tests/
+src/cli/biggy/
+├─ engine/                 # the importable investigation engine
+│  ├─ orchestrator.py      #   the phase pipeline
+│  ├─ context.py           #   Investigation — the shared blackboard phases mutate
+│  ├─ config.py schemas.py ledger.py trace.py
+│  ├─ grounding.py         #   the deterministic citation verifier (the trust centerpiece)
+│  ├─ phases/              #   hypothesize · investigate · adjudicate · verify (one class per stage)
+│  ├─ evidence/            #   vault (time-scoping) · timeutil · tools (read_file/search/get_*)
+│  ├─ llm/                 #   provider-abstracted chat client (init_chat_model)
+│  └─ prompts/             #   versioned phase prompts
+├─ cli/                    # terminal surface: app · render · commands/(investigate · eval · version)
+└─ eval/                   # grade (vs HIDDEN_TRUTH) · harness (biggy eval)
 ```
 
 ## Roadmap
 
-The engine grows incrementally — see [`../../docs/DELIVERY.md`](../../docs/DELIVERY.md).
-**Inc 1** = multi-hypothesis + disconfirmation (rule out the orders-db herring). **Inc 2** =
-deterministic citation verifier + calibrated confidence + `N/N verified` badge.
+Inc 0–2 (walking skeleton → abductive loop → trust layer) and the Inc 4 eval harness are done — see
+[`../../docs/DELIVERY.md`](../../docs/DELIVERY.md). Next: **Inc 5** (semantic cross-incident memory)
+and the **Phase 2** web app over the same engine.
