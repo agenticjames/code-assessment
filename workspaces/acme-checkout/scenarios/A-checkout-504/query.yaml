@@ -2,6 +2,7 @@
 # sliced to this window/as_of. The answer key is HIDDEN_TRUTH.md (never fed to the agent).
 id: A
 slug: checkout-504
+label: "504s"                    # short chip label for the web preset picker
 workspace: acme-checkout
 query: "checkout is throwing 504s and customers are complaining"
 mode: live                       # paged mid-incident; investigate as-of `now`, looking back

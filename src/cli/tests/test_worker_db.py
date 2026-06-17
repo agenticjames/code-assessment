@@ -70,6 +70,8 @@ def _fake_result_and_ledger(query: str):
         workspace="acme-checkout",
         scenario="A",
         query=query,
+        as_of="2026-06-16T15:15:00+00:00",
+        window=["2026-06-16T13:15:00+00:00", "2026-06-16T15:15:00+00:00"],
         tool_calls=[
             ToolCall(step=1, name="list_evidence", args={}, result_preview="...")
         ],
@@ -118,6 +120,15 @@ def test_worker_db_round_trip() -> None:
         assert _count("tool_calls") == 1
         assert _count("trace_events") == 1
         assert _count("citations") == 1
+
+        # the resolved frame is persisted (as_of + window) from the ledger
+        frame_row = db.conn.execute(
+            "SELECT as_of, window_start, window_end FROM investigations WHERE id=%s",
+            (job.id,),
+        ).fetchone()
+        assert frame_row[0] == datetime(2026, 6, 16, 15, 15, tzinfo=timezone.utc)
+        assert frame_row[1] == datetime(2026, 6, 16, 13, 15, tzinfo=timezone.utc)
+        assert frame_row[2] == datetime(2026, 6, 16, 15, 15, tzinfo=timezone.utc)
 
         db.fail(job.id, "boom")  # exercise the failure path
         status = db.conn.execute(

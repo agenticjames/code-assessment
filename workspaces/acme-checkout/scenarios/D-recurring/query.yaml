@@ -1,5 +1,6 @@
 id: D
 slug: recurring-connection-errors
+label: "recurring"
 workspace: acme-checkout
 query: "orders are failing with connection errors again"
 mode: live

@@ -50,3 +50,34 @@ export function statusLabel(status: string): string {
 export function isTerminal(status: string): boolean {
   return status === "succeeded" || status === "failed" || status === "canceled";
 }
+
+const _MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const _pad = (n: number) => String(n).padStart(2, "0");
+
+/** ISO instant → compact, deterministic UTC display, e.g. "Jun 16, 15:15 UTC" (no locale → no
+ * hydration drift). The corpus is UTC-anchored, so the UI always speaks UTC explicitly. */
+export function formatInstant(value: string | Date | null | undefined): string {
+  if (!value) return "—";
+  const d = typeof value === "string" ? new Date(value) : value;
+  if (isNaN(+d)) return "—";
+  return `${_MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${_pad(d.getUTCHours())}:${_pad(d.getUTCMinutes())} UTC`;
+}
+
+/** A window `[start, end]` → compact label; collapses to one date when both ends share a day. */
+export function windowLabel(
+  start: string | Date | null | undefined,
+  end: string | Date | null | undefined,
+): string {
+  if (!start || !end) return "—";
+  const s = typeof start === "string" ? new Date(start) : start;
+  const e = typeof end === "string" ? new Date(end) : end;
+  if (isNaN(+s) || isNaN(+e)) return "—";
+  const t = (d: Date) => `${_pad(d.getUTCHours())}:${_pad(d.getUTCMinutes())}`;
+  const sameDay =
+    s.getUTCFullYear() === e.getUTCFullYear() &&
+    s.getUTCMonth() === e.getUTCMonth() &&
+    s.getUTCDate() === e.getUTCDate();
+  if (sameDay) return `${_MONTHS[s.getUTCMonth()]} ${s.getUTCDate()}, ${t(s)}–${t(e)} UTC`;
+  const dt = (d: Date) => `${_MONTHS[d.getUTCMonth()]} ${d.getUTCDate()} ${t(d)}`;
+  return `${dt(s)} – ${dt(e)} UTC`;
+}

@@ -56,15 +56,17 @@ class Investigation:
     ) -> "Investigation":
         tracer = tracer or Tracer()
         vault = Vault.load(config)
-        sc = vault.scenario
         tracer.scenario(vault)
+        frame = vault.frame
+        # A seeded/eval run keys the incident on the scenario id; an ad-hoc run keys it on as_of.
+        suffix = vault.scenario_id or f"{frame.as_of:%Y%m%dT%H%MZ}"
         ledger = Ledger(
-            incident_id=f"{config.workspace}-{sc.id}",
+            incident_id=f"{config.workspace}-{suffix}",
             workspace=config.workspace,
-            scenario=sc.id,
-            query=sc.query,
-            as_of=sc.as_of.isoformat(),
-            window=[sc.window[0].isoformat(), sc.window[1].isoformat()],
+            scenario=vault.scenario_id,
+            query=vault.query,
+            as_of=frame.as_of.isoformat(),
+            window=[frame.start.isoformat(), frame.end.isoformat()],
         )
         return cls(
             config=config,

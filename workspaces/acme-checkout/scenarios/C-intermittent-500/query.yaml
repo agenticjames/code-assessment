@@ -1,5 +1,6 @@
 id: C
 slug: intermittent-500
+label: "intermittent"
 workspace: acme-checkout
 query: "we've had intermittent 500s for the last hour and can't reproduce it"
 mode: live

@@ -1,12 +1,17 @@
 import { Composer } from "@/components/investigations/composer";
 import { InvestigationsHistory } from "@/components/investigations/investigations-history";
 import { listInvestigations } from "@/lib/db/queries";
+import { env } from "@/lib/env";
+import { readManifest } from "@/lib/workspace";
 
 // Always read fresh from Postgres (a dashboard, not a static page).
 export const dynamic = "force-dynamic";
 
 export default async function InvestigationsPage() {
-  const rows = await listInvestigations();
+  const [rows, manifest] = await Promise.all([
+    listInvestigations(),
+    readManifest(env.WORKSPACE_DEFAULT),
+  ]);
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6">
       <div>
@@ -15,7 +20,7 @@ export default async function InvestigationsPage() {
           Trigger a run, watch it reason, review the history.
         </p>
       </div>
-      <Composer />
+      <Composer manifest={manifest} />
       <div className="space-y-2">
         <h2 className="text-sm font-medium text-muted-foreground">Recent</h2>
         <InvestigationsHistory rows={rows} />

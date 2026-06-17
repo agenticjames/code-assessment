@@ -53,6 +53,12 @@ class RunConfig:
     query: str
     workspace: str = "acme-checkout"
     scenario: str | None = None
+    # Time-frame inputs (raw strings; the engine's resolve_frame turns these into one TimeFrame).
+    # Precedence: since+until (range) > as_of/look_back (live) > scenario seed > default now()/2h.
+    as_of: str | None = None
+    look_back: str | None = None
+    since: str | None = None
+    until: str | None = None
     provider: str = DEFAULT_PROVIDER
     model: str = DEFAULT_MODEL
     max_steps: int = DEFAULT_MAX_STEPS

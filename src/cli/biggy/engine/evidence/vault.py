@@ -1,4 +1,4 @@
-"""The evidence vault — loads a workspace + scenario frame and serves time-scoped evidence.
+"""The evidence vault — loads a workspace + a resolved TimeFrame and serves time-scoped evidence.
 
 Central Inc-0 responsibility: slice the shared ``telemetry/`` corpus to the incident window
 ``[as_of - look_back, as_of]`` and **clamp to as_of** (no hindsight). Standing-world docs
@@ -19,8 +19,10 @@ from pathlib import Path
 
 import yaml
 
+from biggy.engine import scenario as scenario_mod
 from biggy.engine.config import RunConfig
-from biggy.engine.evidence.timeutil import extract_timestamp, parse_iso, parse_lookback
+from biggy.engine.evidence.timeutil import extract_timestamp, parse_iso
+from biggy.engine.frame import TimeFrame, resolve_frame
 
 # (subdir, glob, kind) for telemetry served with windowing.
 _TELEMETRY_GLOBS = [
@@ -88,13 +90,17 @@ def _window_dated(
             continue
         m = line_re.match(txt)
         if m and cur_date:
-            keep_prev = start <= parse_iso(f"{cur_date}T{m.group(1)}:{m.group(2)}:00") <= end
+            keep_prev = (
+                start <= parse_iso(f"{cur_date}T{m.group(1)}:{m.group(2)}:00") <= end
+            )
             if keep_prev:
                 if pending_hdr:
                     out.append(pending_hdr)
                     pending_hdr = None
                 out.append((i, txt))
-        elif txt.strip() and keep_prev:  # prose / blockquote continuation follows its parent
+        elif (
+            txt.strip() and keep_prev
+        ):  # prose / blockquote continuation follows its parent
             out.append((i, txt))
     return out
 
@@ -110,29 +116,24 @@ class EvidenceFile:
     )
 
 
-@dataclass
-class Scenario:
-    id: str
-    query: str
-    as_of: datetime
-    look_back: str
-    window: tuple[datetime, datetime]
-    severity: str | None
-    hidden_truth_path: Path | None  # for the grader ONLY — never surfaced to the agent
-
-
 class Vault:
     def __init__(
         self,
         root: Path,
         workspace: dict,
-        scenario: Scenario,
+        frame: TimeFrame,
+        query: str,
+        scenario_id: str | None,
+        severity: str | None,
         manifest: list[EvidenceFile],
         ablate: set[str] | None = None,
     ):
         self.root = root
         self.workspace = workspace
-        self.scenario = scenario
+        self.frame = frame  # WHEN — the resolved time window + clamp
+        self.query = query  # WHAT — the incident report
+        self.scenario_id = scenario_id  # set for seeded/eval runs; None for ad-hoc
+        self.severity = severity
         self.manifest = manifest
         self.ablate = ablate or set()
         self._allowed = {e.relpath for e in manifest}
@@ -149,49 +150,23 @@ class Vault:
         ablate = {
             a.strip().replace("\\", "/").lstrip("./") for a in (config.ablate or [])
         }
-        scenario = cls._load_scenario(root, config)
-        manifest = cls._build_manifest(root, scenario, ablate)
-        return cls(root, workspace, scenario, manifest, ablate)
-
-    @staticmethod
-    def _load_scenario(root: Path, config: RunConfig) -> Scenario:
-        if not config.scenario:
-            raise ValueError(
-                "a --scenario is required (it provides the incident time window)."
-            )
-        sdir = root / "scenarios"
-        match = next(
-            (
-                d
-                for d in sorted(sdir.iterdir())
-                if d.is_dir()
-                and (
-                    d.name == config.scenario or d.name.split("-")[0] == config.scenario
-                )
-            ),
-            None,
+        # A named scenario only *seeds* the query/severity now; the time window is resolved
+        # independently (explicit flags > scenario seed > default now/2h), so an investigation can
+        # run with no scenario at all. The answer key stays out of the vault entirely (grader-only).
+        seed = (
+            scenario_mod.read_seed(root, config.scenario) if config.scenario else None
         )
-        if match is None:
-            raise FileNotFoundError(
-                f"scenario {config.scenario!r} not found under {sdir}"
-            )
-        frame = yaml.safe_load((match / "query.yaml").read_text(encoding="utf-8"))
-        as_of = parse_iso(str(frame["as_of"]))
-        look_back = str(frame.get("look_back", "2h"))
-        ht = match / "HIDDEN_TRUTH.md"
-        return Scenario(
-            id=str(frame.get("id", config.scenario)),
-            query=config.query or frame.get("query", ""),
-            as_of=as_of,
-            look_back=look_back,
-            window=(as_of - parse_lookback(look_back), as_of),
-            severity=frame.get("severity"),
-            hidden_truth_path=ht if ht.exists() else None,
+        frame = resolve_frame(config)
+        query = config.query or (seed.query if seed else "")
+        severity = seed.severity if seed else None
+        manifest = cls._build_manifest(root, frame, ablate)
+        return cls(
+            root, workspace, frame, query, config.scenario, severity, manifest, ablate
         )
 
     @classmethod
     def _build_manifest(
-        cls, root: Path, scenario: Scenario, ablate: set[str]
+        cls, root: Path, frame: TimeFrame, ablate: set[str]
     ) -> list[EvidenceFile]:
         files: list[EvidenceFile] = []
         for subdir, pat, kind in _TELEMETRY_GLOBS:
@@ -200,7 +175,7 @@ class Vault:
                 if not p.is_file():
                     continue
                 if subdir.endswith("captures") and not cls._capture_in_window(
-                    p.name, scenario
+                    p.name, frame
                 ):
                     continue
                 files.append(
@@ -209,24 +184,24 @@ class Vault:
                         p.relative_to(root).as_posix(),
                         kind,
                         "telemetry",
-                        scenario,
+                        frame,
                     )
                 )
         for rel, kind in _TELEMETRY_SINGLES:
             if (root / rel).is_file():
-                files.append(cls._make_entry(root, rel, kind, "telemetry", scenario))
+                files.append(cls._make_entry(root, rel, kind, "telemetry", frame))
         for subdir, pat, kind in _COMMS_GLOBS:
             base = root / subdir
             for p in sorted(base.glob(pat)) if base.is_dir() else []:
                 if p.is_file():
                     files.append(
                         cls._make_entry(
-                            root, p.relative_to(root).as_posix(), kind, "comms", scenario
+                            root, p.relative_to(root).as_posix(), kind, "comms", frame
                         )
                     )
         for rel, kind in _COMMS_SINGLES:
             if (root / rel).is_file():
-                files.append(cls._make_entry(root, rel, kind, "comms", scenario))
+                files.append(cls._make_entry(root, rel, kind, "comms", frame))
         for subdir, pat, kind in _STANDING_GLOBS:
             base = root if subdir == "." else root / subdir
             for p in sorted(base.glob(pat)) if base.is_dir() else []:
@@ -237,7 +212,7 @@ class Vault:
                             p.relative_to(root).as_posix(),
                             kind,
                             "standing",
-                            scenario,
+                            frame,
                         )
                     )
         # Hard guard: the answer key is never evidence; --ablate hides files (honesty demo).
@@ -249,14 +224,14 @@ class Vault:
 
     @classmethod
     def _make_entry(
-        cls, root: Path, rel: str, kind: str, category: str, scenario: Scenario
+        cls, root: Path, rel: str, kind: str, category: str, frame: TimeFrame
     ) -> EvidenceFile:
         lines = (root / rel).read_text(encoding="utf-8", errors="replace").splitlines()
         tr = None
         if kind in _WINDOWED:
             kept = [
                 extract_timestamp(t)
-                for _, t in cls._window_lines(kind, lines, scenario.window)
+                for _, t in cls._window_lines(kind, lines, frame.window)
             ]
             kept = [t for t in kept if t]
             if kept:
@@ -266,13 +241,13 @@ class Vault:
         )
 
     @staticmethod
-    def _capture_in_window(name: str, scenario: Scenario) -> bool:
+    def _capture_in_window(name: str, frame: TimeFrame) -> bool:
         m = _CAPTURE_TS.search(name)
         if not m:
             return True
         d, hh, mm = m.groups()
         ts = parse_iso(f"{d}T{hh}:{mm}:00")
-        return scenario.window[0] <= ts <= scenario.as_of
+        return frame.window[0] <= ts <= frame.as_of
 
     # ---------- windowing ----------
     @staticmethod
@@ -314,7 +289,9 @@ class Vault:
         if kind == "tickets":  # one inline ISO per line (seconds optional)
             for i, txt in enumerate(lines, 1):
                 m = _TICKET_TS.search(txt)
-                if m is None:  # comment / blank / revenue-note: structural context, keep
+                if (
+                    m is None
+                ):  # comment / blank / revenue-note: structural context, keep
                     if not txt.strip() or txt.lstrip().startswith("#"):
                         out.append((i, txt))
                     continue
@@ -325,10 +302,6 @@ class Vault:
                     out.append((i, txt))
             return out
         return list(enumerate(lines, 1))  # doc: whole file
-
-    def _wlabel(self) -> str:
-        s, e = self.scenario.window
-        return f"{s:%Y-%m-%dT%H:%M}–{e:%H:%M}Z"
 
     # ---------- tool surface ----------
     def _normalize(self, path: str) -> str | None:
@@ -349,7 +322,7 @@ class Vault:
         is exactly what we avoid). The agent-facing tool uses the default (all categories)."""
         scoped = "telemetry + comms" if "comms" in categories else "telemetry"
         out = [
-            f"# Evidence manifest — {scoped} sliced to {self._wlabel()}; standing docs are timeless"
+            f"# Evidence manifest — {scoped} sliced to {self.frame.label()}; standing docs are timeless"
         ]
         for cat in categories:
             group = [e for e in self.manifest if e.category == cat]
@@ -376,7 +349,7 @@ class Vault:
         lines = (
             (self.root / rel).read_text(encoding="utf-8", errors="replace").splitlines()
         )
-        return self._window_lines(kind, lines, self.scenario.window)
+        return self._window_lines(kind, lines, self.frame.window)
 
     def read_evidence(self, path: str) -> str:
         rel = self._normalize(path)
@@ -386,12 +359,10 @@ class Vault:
         lines = (
             (self.root / rel).read_text(encoding="utf-8", errors="replace").splitlines()
         )
-        kept = self._window_lines(kind, lines, self.scenario.window)
+        kept = self._window_lines(kind, lines, self.frame.window)
         header = f"# {rel}"
         if kind in _WINDOWED:
-            header += (
-                f"  (window {self._wlabel()}; {len(kept)}/{len(lines)} lines in window)"
-            )
+            header += f"  (window {self.frame.label()}; {len(kept)}/{len(lines)} lines in window)"
         if not kept:
             return f"{header}\n(no entries in the incident window)"
         body = "\n".join(f"{ln}\t{txt}" for ln, txt in kept)
@@ -408,7 +379,7 @@ class Vault:
                 .read_text(encoding="utf-8", errors="replace")
                 .splitlines()
             )
-            for ln, txt in self._window_lines(e.kind, lines, self.scenario.window):
+            for ln, txt in self._window_lines(e.kind, lines, self.frame.window):
                 if kw in txt.lower():
                     hits.append(f"{e.relpath}:{ln}: {txt.strip()}")
                     if len(hits) >= limit:
@@ -469,7 +440,7 @@ class Vault:
             (self.root / rel).read_text(encoding="utf-8", errors="replace").splitlines()
         )
         out = []
-        for ln, txt in self._window_lines("deploys", lines, self.scenario.window):
+        for ln, txt in self._window_lines("deploys", lines, self.frame.window):
             s = txt.strip()
             if not s.startswith("- {"):  # skip the 'changes:' header, comments, blanks
                 continue
@@ -478,8 +449,8 @@ class Vault:
             out.append(f"{rel}:{ln}: {s}")
         if not out:
             scope = f" for service {service!r}" if service else ""
-            return f"No changes{scope} in the incident window ({self._wlabel()})."
-        head = f"# changes in {self._wlabel()}" + (
+            return f"No changes{scope} in the incident window ({self.frame.label()})."
+        head = f"# changes in {self.frame.label()}" + (
             f" (service={service})" if service else ""
         )
         return head + "\n" + "\n".join(out)
@@ -496,18 +467,20 @@ class Vault:
             return f"ERROR: unknown metric {name!r}. Available: {', '.join(avail)}."
         lines = full.read_text(encoding="utf-8", errors="replace").splitlines()
         rows = []
-        for ln, txt in self._window_lines("csv", lines, self.scenario.window):
+        for ln, txt in self._window_lines("csv", lines, self.frame.window):
             ts, _, val = txt.partition(",")
             try:
                 rows.append((ln, ts.strip(), float(val)))
             except ValueError:
                 continue  # header / malformed
         if not rows:
-            return f"# {rel}\n(no data points in the incident window {self._wlabel()})"
+            return (
+                f"# {rel}\n(no data points in the incident window {self.frame.label()})"
+            )
         vals = [v for _, _, v in rows]
         peak_ln, peak_ts, peak_v = max(rows, key=lambda r: r[2])
         summary = (
-            f"# {rel}  (window {self._wlabel()}; {len(rows)} points)\n"
+            f"# {rel}  (window {self.frame.label()}; {len(rows)} points)\n"
             f"first={rows[0][2]:g} last={rows[-1][2]:g} min={min(vals):g} max={max(vals):g} "
             f"peak={peak_v:g} @ {peak_ts} ({rel}:{peak_ln})"
         )

@@ -11,6 +11,7 @@ import path from "node:path";
 import { parse as parseYaml } from "yaml";
 
 import { env } from "@/lib/env";
+import { manifestSchema, type Manifest } from "@/lib/manifest";
 
 function workspacesRoot(): string {
   // Env override, else the in-repo workspaces/ (../../workspaces relative to the web project).
@@ -66,6 +67,21 @@ export async function readTopology(workspace: string): Promise<Topology | null> 
   if (!src) return null;
   try {
     return (parseYaml(src.lines.join("\n")) ?? null) as Topology | null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The committed workspace manifest (scenario presets + corpus profile). The engine generates it
+ * (`biggy workspace manifest`); the web reads it because it cannot read the denied `scenarios/`
+ * dir and must not re-parse telemetry. Validated with zod — a stale/corrupt file returns null.
+ */
+export async function readManifest(workspace: string): Promise<Manifest | null> {
+  const src = await readSource(workspace, "manifest.json");
+  if (!src) return null;
+  try {
+    return manifestSchema.parse(JSON.parse(src.lines.join("\n")));
   } catch {
     return null;
   }

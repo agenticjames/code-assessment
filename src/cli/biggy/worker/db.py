@@ -109,9 +109,16 @@ class Db:
         duration = (
             int((now - started_at).total_seconds() * 1000) if started_at else None
         )
+        # The authoritative resolved frame (engine-computed) lands here — overwriting any preview
+        # the web seeded at queue time. ledger.as_of / .window are ISO-8601 strings.
+        win = ledger.window or []
+        fr_as_of = datetime.fromisoformat(ledger.as_of) if ledger.as_of else None
+        win_start = datetime.fromisoformat(win[0]) if len(win) > 0 else None
+        win_end = datetime.fromisoformat(win[1]) if len(win) > 1 else None
         self.conn.execute(
             "UPDATE investigations SET "
             "status=%s, finished_at=%s, updated_at=%s, duration_ms=%s, step_count=%s, "
+            "as_of=%s, window_start=%s, window_end=%s, "
             "outcome=%s, summary=%s, top_service=%s, top_confidence=%s, "
             "grounding_verified=%s, grounding_total=%s, recommended_action=%s, "
             "result_json=%s, ledger_json=%s, error=NULL WHERE id=%s",
@@ -121,6 +128,9 @@ class Db:
                 now,
                 duration,
                 len(ledger.tool_calls),
+                fr_as_of,
+                win_start,
+                win_end,
                 result.outcome,
                 result.summary,
                 top.service if top else None,

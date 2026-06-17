@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import type { TraceEvent } from "@/lib/contracts";
+import { windowLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 function Line({
@@ -39,7 +40,8 @@ export function TraceEventItem({ event }: { event: TraceEvent }) {
       return (
         <Line dim>
           investigating <span className="text-foreground">{event.data.query}</span> ·{" "}
-          {event.data.files} files in window
+          {event.data.mode === "retrospective" ? "range" : "window"}{" "}
+          {windowLabel(event.data.window[0], event.data.window[1])} · {event.data.files} files
         </Line>
       );
     case "phase":

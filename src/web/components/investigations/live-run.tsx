@@ -25,6 +25,9 @@ export type LiveRunInitial = {
   status: string;
   groundingVerified: number | null;
   groundingTotal: number | null;
+  // The resolved incident window (persisted columns); null until seeded/finished.
+  windowStart?: string | Date | null;
+  windowEnd?: string | Date | null;
   // Deterministic comms-pass artifacts (from ledger_json); null until the run completes.
   impact?: CustomerImpact | null;
   statusCheck?: StatusCheck | null;
@@ -99,6 +102,8 @@ export function LiveRun({ initial }: { initial: LiveRunInitial }) {
           status={run.status}
           groundingVerified={run.grounding?.verified ?? null}
           groundingTotal={run.grounding?.total ?? null}
+          windowStart={initial.windowStart}
+          windowEnd={initial.windowEnd}
         />
 
         <Tabs defaultValue="briefing" className="w-full">

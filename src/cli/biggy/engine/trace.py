@@ -118,15 +118,15 @@ class Tracer:
         self.sink.emit(event_type, data)
 
     def scenario(self, vault: "Vault") -> None:
-        sc = vault.scenario
-        start, end = sc.window
+        f = vault.frame
         self._emit(
             EVENT_SCENARIO,
             {
-                "query": sc.query,
-                "as_of": sc.as_of.isoformat(),
-                "window": [start.isoformat(), end.isoformat()],
+                "query": vault.query,
+                "as_of": f.as_of.isoformat(),
+                "window": [f.start.isoformat(), f.end.isoformat()],
                 "files": len(vault.manifest),
+                "mode": f.mode,
             },
         )
 

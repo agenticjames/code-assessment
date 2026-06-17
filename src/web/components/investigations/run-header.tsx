@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { windowLabel } from "@/lib/format";
+
 import { CancelButton } from "./cancel-button";
 import { GroundingBadge } from "./grounding-badge";
 import { StatusBadge } from "./status-badge";
@@ -13,6 +15,8 @@ export function RunHeader({
   status,
   groundingVerified,
   groundingTotal,
+  windowStart,
+  windowEnd,
 }: {
   id: string;
   query: string;
@@ -22,6 +26,8 @@ export function RunHeader({
   status: string;
   groundingVerified: number | null;
   groundingTotal: number | null;
+  windowStart?: string | Date | null;
+  windowEnd?: string | Date | null;
 }) {
   return (
     <div>
@@ -40,6 +46,7 @@ export function RunHeader({
         <span>{workspace}</span>
         {scenario && <span>· Scenario {scenario}</span>}
         <span>· {model}</span>
+        {windowStart && windowEnd && <span>· {windowLabel(windowStart, windowEnd)}</span>}
       </div>
     </div>
   );
