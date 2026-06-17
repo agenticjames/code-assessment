@@ -15,6 +15,7 @@ import typer
 from biggy import __version__
 from biggy.cli.commands import eval as eval_cmd
 from biggy.cli.commands import investigate, version
+from biggy.cli.commands import workspace as workspace_cmd
 
 # Render evidence text (em-dashes, arrows) without mojibake, and never raise on a legacy
 # Windows code page. No-op where the stream can't be reconfigured (e.g. under test capture).
@@ -57,3 +58,5 @@ def main(
 app.command("investigate")(investigate.investigate)
 app.command("eval")(eval_cmd.run_eval)
 app.command("version")(version.version)
+# Sub-command groups (e.g. ``biggy workspace manifest``).
+app.add_typer(workspace_cmd.app)

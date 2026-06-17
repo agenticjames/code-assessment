@@ -1,5 +1,6 @@
 id: F
 slug: slow-burn
+label: "slow burn"
 workspace: acme-checkout
 query: "checkout has been getting slower over the past few days, no idea why"
 mode: live

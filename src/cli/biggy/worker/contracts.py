@@ -32,6 +32,12 @@ class Job(BaseModel):
     query: str
     workspace: str = "acme-checkout"
     scenario: str | None = None
+    # Time-frame inputs (raw; resolved into one TimeFrame by the engine). Mirror engine/config.py
+    # RunConfig and lib/contracts.ts jobSchema — the parity test asserts this field-set matches.
+    as_of: str | None = None
+    look_back: str | None = None
+    since: str | None = None
+    until: str | None = None
     provider: str = DEFAULT_PROVIDER
     model: str = DEFAULT_MODEL
     max_steps: int = Field(default=DEFAULT_MAX_STEPS, ge=1, le=30)

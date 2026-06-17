@@ -1,5 +1,6 @@
 id: B
 slug: alert-storm
+label: "alert storm"
 workspace: acme-checkout
 query: "we're getting paged by ~20 alerts, what's actually going on?"
 mode: live

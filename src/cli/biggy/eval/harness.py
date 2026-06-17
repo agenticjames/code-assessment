@@ -15,8 +15,8 @@ from rich.panel import Panel
 from rich.table import Table
 
 from biggy.engine.config import RunConfig
-from biggy.engine.evidence.vault import Vault
 from biggy.engine.orchestrator import investigate
+from biggy.engine.scenario import hidden_truth_path
 from biggy.engine.trace import Tracer
 from biggy.eval.grade import Scorecard, grade
 
@@ -76,7 +76,7 @@ def run_one(
         _, ledger = investigate(cfg, tracer=tracer or Tracer(enabled=False))
         if out_dir:
             ledger.to_json(Path(out_dir) / f"{ledger.incident_id}.json")
-        ht = Vault.load(cfg).scenario.hidden_truth_path
+        ht = hidden_truth_path(cfg.workspace_dir, scenario)
         if ht is None:
             return EvalRun(scenario, error="no HIDDEN_TRUTH.md")
         return EvalRun(scenario, scorecard=grade(ledger, ht))

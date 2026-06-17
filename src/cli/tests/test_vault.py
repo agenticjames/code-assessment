@@ -4,7 +4,7 @@ All offline (no LLM)."""
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -13,9 +13,9 @@ from biggy.engine.evidence.vault import Vault
 
 
 def test_window_is_as_of_minus_lookback(config_a):
-    sc = Vault.load(config_a).scenario
-    assert sc.as_of == datetime(2026, 6, 16, 15, 15, tzinfo=timezone.utc)
-    assert sc.window[0] == datetime(2026, 6, 16, 13, 15, tzinfo=timezone.utc)
+    f = Vault.load(config_a).frame
+    assert f.as_of == datetime(2026, 6, 16, 15, 15, tzinfo=timezone.utc)
+    assert f.window[0] == datetime(2026, 6, 16, 13, 15, tzinfo=timezone.utc)
 
 
 def test_other_incidents_excluded_by_window(config_a):
@@ -36,12 +36,17 @@ def test_hidden_truth_is_never_exposed(config_a):
     assert "ERROR" in v.read_evidence("scenarios/A-checkout-504/HIDDEN_TRUTH.md")
 
 
-def test_missing_scenario_raises(ws_root):
+def test_no_scenario_uses_default_live_frame(ws_root):
+    # Decoupled: a scenario is no longer required — no frame inputs means "now, last 2h".
     cfg = RunConfig(
         query="x", workspace="acme-checkout", scenario=None, workspaces_root=ws_root
     )
-    with pytest.raises(ValueError):
-        Vault.load(cfg)
+    v = Vault.load(cfg)
+    assert v.scenario_id is None
+    assert v.frame.mode == "live"
+    assert v.frame.look_back == "2h"
+    assert v.frame.end - v.frame.start == timedelta(hours=2)
+    assert v.frame.end == v.frame.as_of  # clamped to as_of (no hindsight)
 
 
 def test_unknown_scenario_raises(ws_root):

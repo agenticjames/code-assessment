@@ -65,7 +65,7 @@ class Check:
 @dataclass
 class Scorecard:
     scenario: str
-    outcome_kind: str  # root_cause | inconclusive
+    outcome_kind: str  # root_cause | inconclusive | multi_incident
     checks: list[Check] = field(default_factory=list)
 
     @property
@@ -180,9 +180,7 @@ def _evidence_refs(ledger: Ledger):
     if not ledger.result:
         return []
     return [
-        e
-        for h in ledger.result.hypotheses
-        for e in (h.supporting + h.contradicting)
+        e for h in ledger.result.hypotheses for e in (h.supporting + h.contradicting)
     ]
 
 
@@ -265,7 +263,9 @@ def _memory_check(key: dict, ledger: Ledger) -> Check | None:
     if not expected:
         return None
     texts = _result_texts(ledger)
-    matched = [any(exp.casefold() in text.casefold() for text in texts) for exp in expected]
+    matched = [
+        any(exp.casefold() in text.casefold() for text in texts) for exp in expected
+    ]
     n = sum(matched)
     return Check(
         "memory recall",
@@ -298,14 +298,20 @@ def _status_correction_check(key: dict, ledger: Ledger) -> Check | None:
     sc = ledger.status_check
     ok = bool(sc and sc.needs_correction)
     if sc and sc.has_draft:
-        detail = f"flagged ({sc.draft_source})" if ok else "draft present but not flagged"
+        detail = (
+            f"flagged ({sc.draft_source})" if ok else "draft present but not flagged"
+        )
     else:
         detail = "no in-window draft found"
     return Check("status-page correction", detail, ok)
 
 
 def _common_checks(key: dict, ledger: Ledger) -> list[Check]:
-    checks = [_citation_check([str(c) for c in _as_list(key.get("required_citations"))], ledger)]
+    checks = [
+        _citation_check(
+            [str(c) for c in _as_list(key.get("required_citations"))], ledger
+        )
+    ]
     for optional in (
         _open_question_check(key, ledger),
         _noise_check(key, ledger),
@@ -329,6 +335,8 @@ def grade(ledger: Ledger, hidden_truth_path: Path | str) -> Scorecard:
     kind = str(key.get("outcome", "root_cause"))
     if kind == "inconclusive":
         return _grade_inconclusive(key, ledger)
+    if kind == "multi_incident":
+        return _grade_multi_incident(key, ledger)
     return _grade_root_cause(key, ledger)
 
 
@@ -426,13 +434,59 @@ def _grade_inconclusive(key: dict, ledger: Ledger) -> Scorecard:
             )
         )
     checks.extend(
-        c
-        for c in _common_checks(key, ledger)
-        if c.name not in {"open questions"}
+        c for c in _common_checks(key, ledger) if c.name not in {"open questions"}
     )
     return Scorecard(
         scenario=str(key.get("scenario", "?")),
         outcome_kind="inconclusive",
+        checks=checks,
+    )
+
+
+def _grade_multi_incident(key: dict, ledger: Ledger) -> Scorecard:
+    """Range/retrospective grading (scenario G): the answer is a TIMELINE of the distinct incidents
+    in the window, each with its own cause + citations — not one root cause, and nothing out of
+    range. Range-scoping is structurally enforced by the vault's windowing, so the checks here are:
+    both incidents surfaced, a distinct hypothesis per incident (no conflation), every event's
+    citations present, declared noise dropped, full grounding.
+    """
+    events = [e for e in _as_list(key.get("events")) if isinstance(e, dict)]
+    hyps = _ranked(ledger)
+    texts = _result_texts(ledger)
+
+    matched = [
+        _matches_expectation(str(ev.get("incident", "")), texts)
+        or _matches_expectation(str(ev.get("summary", "")), texts)
+        for ev in events
+    ]
+    n_ev = sum(matched)
+    labels = [str(ev.get("incident", "")) for ev in events]
+    checks: list[Check] = [
+        Check(
+            "both incidents surfaced",
+            f"{n_ev}/{len(events)} events{_missing_detail(labels, matched)}",
+            bool(events) and n_ev == len(events),
+        ),
+        Check(
+            "timeline, not one root cause",
+            f"{len(hyps)} hypotheses for {len(events)} incidents",
+            len(hyps) >= len(events) >= 2,
+        ),
+    ]
+
+    required = [c for ev in events for c in _as_list(ev.get("citations"))]
+    required += [str(c) for c in _as_list(key.get("required_citations"))]
+    if required:
+        checks.append(_citation_check([str(r) for r in required], ledger))
+
+    noise = _noise_check(key, ledger)
+    if noise is not None:
+        checks.append(noise)
+    checks.append(_grounding_check(ledger))
+
+    return Scorecard(
+        scenario=str(key.get("scenario", "?")),
+        outcome_kind="multi_incident",
         checks=checks,
     )
 

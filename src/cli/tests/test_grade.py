@@ -193,7 +193,10 @@ def test_inconclusive_passes_when_calibrated():
             ),
         ],
         noise_dropped=[
-            NoiseItem(item="benign error-rate blips at 16:33 and 16:38", reason="below spike level"),
+            NoiseItem(
+                item="benign error-rate blips at 16:33 and 16:38",
+                reason="below spike level",
+            ),
             NoiseItem(
                 item="NullPointerException and IllegalStateException",
                 reason="could be a latent code bug, not proof for either hypothesis",
@@ -224,3 +227,80 @@ def test_inconclusive_fails_when_overconfident():
     )
     card = grade(_ledger("C", res, 1), SCEN / "C-intermittent-500" / "HIDDEN_TRUTH.md")
     assert not card.passed  # wrong outcome + over-confident => calibration failure
+
+
+def test_multi_incident_passes_for_a_two_event_timeline():
+    # Scenario G: a range query whose correct answer is a TIMELINE of two distinct incidents.
+    res = InvestigationResult(
+        query="q",
+        outcome="root_cause",
+        summary="Two unrelated incidents in range: 06-10 auth OOM cascade, 06-12 redis pool exhaustion.",
+        noise_dropped=[
+            NoiseItem(
+                item="disk-space-low SEV4 on log-aggregator",
+                reason="chronic alert firing daily inside the range, unrelated to checkout",
+            )
+        ],
+        hypotheses=[
+            Hypothesis(
+                id="H1",
+                statement="06-10 auth-service OOM cascade: dep-3a8c cut memory, auth OOMed and cascaded 401s to checkout",
+                service="auth-service",
+                confidence=0.88,
+                status="confirmed",
+                supporting=[
+                    _ev(
+                        "telemetry/deploys.yaml:12",
+                        claim="dep-3a8c cut auth memory 2Gi->1Gi",
+                        snippet="dep-3a8c",
+                    ),
+                    _ev("telemetry/logs/auth-service.log:20", snippet="OOMKilled"),
+                ],
+            ),
+            Hypothesis(
+                id="H2",
+                statement="06-12 shared redis pool exhaustion under a promo surge: the 50-connection pool maxed out",
+                service="redis",
+                confidence=0.85,
+                status="confirmed",
+                supporting=[
+                    _ev(
+                        "telemetry/logs/redis.log:40",
+                        snippet="max number of clients reached",
+                    ),
+                    _ev("telemetry/metrics/redis_connections.csv:30", snippet="50/50"),
+                ],
+            ),
+        ],
+    )
+    card = grade(_ledger("G", res, 4), SCEN / "G-range-retro" / "HIDDEN_TRUTH.md")
+    assert card.outcome_kind == "multi_incident"
+    assert card.passed, _fails(card)
+
+
+def test_multi_incident_fails_when_conflated_to_one_cause():
+    # The failure mode: collapsing the two distinct incidents into a single root cause.
+    res = InvestigationResult(
+        query="q",
+        outcome="root_cause",
+        summary="checkout was unstable due to one underlying cause",
+        hypotheses=[
+            Hypothesis(
+                id="H1",
+                statement="a single root cause for the whole range",
+                service="checkout",
+                confidence=0.9,
+                status="confirmed",
+                supporting=[
+                    _ev(
+                        "telemetry/logs/redis.log:40",
+                        snippet="max number of clients reached",
+                    )
+                ],
+            )
+        ],
+    )
+    card = grade(_ledger("G", res, 1), SCEN / "G-range-retro" / "HIDDEN_TRUTH.md")
+    timeline = next(c for c in card.checks if c.name == "timeline, not one root cause")
+    assert not timeline.ok
+    assert not card.passed

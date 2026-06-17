@@ -15,6 +15,7 @@ import { db } from "@/lib/db/client";
 import { investigations } from "@/lib/db/schema";
 import { env } from "@/lib/env";
 import { cancelKey, JOBS_STREAM, redis } from "@/lib/redis";
+import { previewWindow, type FrameInput, type FrameMode } from "@/lib/timeframe";
 
 const DEFAULT_PROVIDER = "google_genai";
 const DEFAULT_MODEL = "gemini-3.1-flash-lite";
@@ -24,10 +25,20 @@ export async function createInvestigation(formData: FormData): Promise<void> {
   const query = String(formData.get("query") ?? "").trim();
   if (!query) throw new Error("A query is required.");
 
+  const field = (key: string): string | null =>
+    String(formData.get(key) ?? "").trim() || null;
+
   const workspace = String(formData.get("workspace") || env.WORKSPACE_DEFAULT);
-  const scenario = String(formData.get("scenario") ?? "").trim() || null;
+  const scenario = field("scenario");
   const model = String(formData.get("model") || DEFAULT_MODEL);
   const maxSteps = Number(formData.get("max_steps")) || DEFAULT_MAX_STEPS;
+
+  // Time-frame inputs (raw; the engine's resolve_frame turns these into the authoritative window).
+  const asOf = field("as_of");
+  const lookBack = field("look_back");
+  const since = field("since");
+  const until = field("until");
+  const mode: FrameMode = field("mode") === "retrospective" ? "retrospective" : "live";
 
   const id = randomUUID();
   // Validate the exact wire shape the worker will parse (fail fast, in one place).
@@ -36,10 +47,25 @@ export async function createInvestigation(formData: FormData): Promise<void> {
     query,
     workspace,
     scenario,
+    as_of: asOf,
+    look_back: lookBack,
+    since,
+    until,
     provider: DEFAULT_PROVIDER,
     model,
     max_steps: maxSteps,
   });
+
+  // Seed the frame columns only when the user gave an explicit frame — for a scenario-only or
+  // default run the worker writes the authoritative window at finish. (Preview math only.)
+  const frame: FrameInput = {
+    mode,
+    asOf: asOf ?? undefined,
+    lookBack: lookBack ?? undefined,
+    since: since ?? undefined,
+    until: until ?? undefined,
+  };
+  const win = asOf || lookBack || since || until ? previewWindow(frame) : null;
 
   await db.insert(investigations).values({
     id,
@@ -50,6 +76,9 @@ export async function createInvestigation(formData: FormData): Promise<void> {
     provider: DEFAULT_PROVIDER,
     model,
     maxSteps,
+    asOf: asOf ? new Date(asOf) : win ? win[1] : null,
+    windowStart: win ? win[0] : null,
+    windowEnd: win ? win[1] : null,
   });
   await redis.xadd(JOBS_STREAM, "*", "data", JSON.stringify(job));
 

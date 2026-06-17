@@ -17,6 +17,12 @@ export const jobSchema = z.object({
   query: z.string().min(1),
   workspace: z.string().min(1),
   scenario: z.string().nullable(),
+  // Time-frame inputs (raw; the engine's resolve_frame turns these into one window). Mirrors
+  // worker/contracts.py Job + engine/config.py RunConfig — the parity test asserts the field-set.
+  as_of: z.string().nullish(),
+  look_back: z.string().nullish(),
+  since: z.string().nullish(),
+  until: z.string().nullish(),
   provider: z.string().min(1),
   model: z.string().min(1),
   max_steps: z.number().int().min(1).max(30),
@@ -139,6 +145,9 @@ export const traceEventSchema = z.discriminatedUnion("type", [
       as_of: z.string(),
       window: z.tuple([z.string(), z.string()]),
       files: z.number(),
+      // "live" (as-of + look-back) or "retrospective" (closed range). nullish: older persisted
+      // runs predate this field.
+      mode: z.enum(["live", "retrospective"]).nullish(),
     }),
   ),
   ev("phase", z.object({ name: z.string() })),

@@ -1,0 +1,130 @@
+{
+  "workspace": "acme-checkout",
+  "scenarios": [
+    {
+      "id": "A",
+      "label": "504s",
+      "query": "checkout is throwing 504s and customers are complaining",
+      "mode": "live",
+      "as_of": "2026-06-16T15:15:00+00:00",
+      "look_back": "2h"
+    },
+    {
+      "id": "B",
+      "label": "alert storm",
+      "query": "we're getting paged by ~20 alerts, what's actually going on?",
+      "mode": "live",
+      "as_of": "2026-06-10T21:18:00+00:00",
+      "look_back": "30m"
+    },
+    {
+      "id": "C",
+      "label": "intermittent",
+      "query": "we've had intermittent 500s for the last hour and can't reproduce it",
+      "mode": "live",
+      "as_of": "2026-06-15T17:00:00+00:00",
+      "look_back": "1h"
+    },
+    {
+      "id": "D",
+      "label": "recurring",
+      "query": "orders are failing with connection errors again",
+      "mode": "live",
+      "as_of": "2026-06-12T10:20:00+00:00",
+      "look_back": "30m"
+    },
+    {
+      "id": "E",
+      "label": "deploy",
+      "query": "error rate spiked right after this morning's deploy",
+      "mode": "live",
+      "as_of": "2026-06-16T08:39:00+00:00",
+      "look_back": "1h"
+    },
+    {
+      "id": "F",
+      "label": "slow burn",
+      "query": "checkout has been getting slower over the past few days, no idea why",
+      "mode": "live",
+      "as_of": "2026-06-16T12:00:00+00:00",
+      "look_back": "5d"
+    },
+    {
+      "id": "G",
+      "label": "retro range",
+      "query": "why was checkout unstable between June 10 and June 12?",
+      "mode": "retrospective",
+      "range": {
+        "from": "2026-06-10T00:00:00+00:00",
+        "to": "2026-06-12T23:59:59+00:00"
+      }
+    }
+  ],
+  "corpus": {
+    "min": "2026-06-08T00:00:00+00:00",
+    "max": "2026-06-16T18:00:00+00:00",
+    "buckets": 60,
+    "density": [
+      18,
+      21,
+      1,
+      15,
+      8,
+      14,
+      12,
+      5,
+      14,
+      3,
+      18,
+      2,
+      18,
+      12,
+      4,
+      13,
+      4,
+      15,
+      12,
+      204,
+      13,
+      3,
+      14,
+      3,
+      17,
+      13,
+      5,
+      12,
+      4,
+      15,
+      119,
+      1,
+      15,
+      1,
+      13,
+      3,
+      13,
+      17,
+      5,
+      13,
+      4,
+      18,
+      17,
+      2,
+      14,
+      5,
+      13,
+      1,
+      15,
+      14,
+      2,
+      13,
+      195,
+      15,
+      13,
+      5,
+      14,
+      81,
+      58,
+      391
+    ]
+  }
+}

@@ -33,6 +33,8 @@ export default async function InvestigationDetailPage({
           status: row.status,
           groundingVerified: row.groundingVerified,
           groundingTotal: row.groundingTotal,
+          windowStart: row.windowStart,
+          windowEnd: row.windowEnd,
           impact: impact.success ? impact.data : null,
           statusCheck: statusCheck.success ? statusCheck.data : null,
         }}

@@ -31,7 +31,27 @@ def investigate(
         None,
         "--scenario",
         "-s",
-        help="Scenario id (provides the incident time window), e.g. A.",
+        help="Scenario id to seed the frame + enable --check grading, e.g. A.",
+    ),
+    as_of: Optional[str] = typer.Option(
+        None,
+        "--as-of",
+        help="Investigate as of this UTC instant (ISO 8601). Default: now.",
+    ),
+    look_back: Optional[str] = typer.Option(
+        None,
+        "--look-back",
+        help="Window depth from --as-of, e.g. 2h / 90m / 5d. Default: 2h.",
+    ),
+    since: Optional[str] = typer.Option(
+        None,
+        "--since",
+        help="Retrospective range start (ISO 8601); use with --until.",
+    ),
+    until: Optional[str] = typer.Option(
+        None,
+        "--until",
+        help="Retrospective range end (ISO 8601); use with --since.",
     ),
     provider: str = typer.Option(
         "google_genai", "--provider", help="LLM provider (LangChain init_chat_model)."
@@ -86,6 +106,10 @@ def investigate(
         query=query,
         workspace=workspace,
         scenario=scenario,
+        as_of=as_of,
+        look_back=look_back,
+        since=since,
+        until=until,
         provider=provider,
         model=model,
         max_steps=max_steps,
@@ -106,12 +130,17 @@ def investigate(
 
     if check:
         from biggy.eval.grade import grade, scorecard_panel
-        from biggy.engine.evidence.vault import Vault
+        from biggy.engine.scenario import hidden_truth_path
 
-        ht = Vault.load(config).scenario.hidden_truth_path
-        if ht is None:
+        if not config.scenario:
             _err.print(
-                "[yellow]No HIDDEN_TRUTH.md for this scenario — cannot grade.[/]"
+                "[yellow]--check needs a --scenario (the answer key lives with it).[/]"
             )
         else:
-            _out.print(scorecard_panel(grade(ledger, ht)))
+            ht = hidden_truth_path(config.workspace_dir, config.scenario)
+            if ht is None:
+                _err.print(
+                    "[yellow]No HIDDEN_TRUTH.md for this scenario — cannot grade.[/]"
+                )
+            else:
+                _out.print(scorecard_panel(grade(ledger, ht)))

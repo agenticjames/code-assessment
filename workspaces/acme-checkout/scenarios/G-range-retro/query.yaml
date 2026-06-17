@@ -2,6 +2,7 @@
 # Demonstrates the open-ended "what happened between these dates" capability.
 id: G
 slug: range-retro
+label: "retro range"
 workspace: acme-checkout
 query: "why was checkout unstable between June 10 and June 12?"
 mode: retrospective              # a CLOSED past range — expect a TIMELINE of events, not one root cause

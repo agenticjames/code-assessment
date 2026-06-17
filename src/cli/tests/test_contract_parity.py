@@ -46,3 +46,15 @@ def test_job_defaults_match_engine() -> None:
     assert job.provider == DEFAULT_PROVIDER
     assert job.model == DEFAULT_MODEL
     assert job.max_steps == DEFAULT_MAX_STEPS
+
+
+def test_job_fields_mirrored_in_typescript() -> None:
+    """Every Job field (incl. the frame inputs) must appear in jobSchema in contracts.ts."""
+    text = CONTRACTS_TS.read_text(encoding="utf-8")
+    start = text.index("export const jobSchema")
+    block = text[start : text.index("});", start)]
+    for field in wc.Job.model_fields:
+        assert f"{field}:" in block, (
+            f"contracts.ts jobSchema is missing Job field {field!r} — keep it in sync with "
+            "worker/contracts.py Job"
+        )

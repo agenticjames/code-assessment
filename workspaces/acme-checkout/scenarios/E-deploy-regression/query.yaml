@@ -1,5 +1,6 @@
 id: E
 slug: deploy-regression
+label: "deploy"
 workspace: acme-checkout
 query: "error rate spiked right after this morning's deploy"
 mode: live
