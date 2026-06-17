@@ -1,0 +1,204 @@
+{
+  "incident_id": "acme-checkout-A",
+  "workspace": "acme-checkout",
+  "scenario": "A",
+  "query": "checkout is throwing 504s and customers are complaining",
+  "as_of": "2026-06-16T15:15:00+00:00",
+  "window": [
+    "2026-06-16T13:15:00+00:00",
+    "2026-06-16T15:15:00+00:00"
+  ],
+  "initial_hypotheses": [
+    {
+      "id": "H1",
+      "statement": "The rate-limiter configuration change (dep-7e2a) is incorrectly throttling legitimate checkout traffic.",
+      "service": "rate-limiter",
+      "confidence": 0.6,
+      "status": "open",
+      "disconfirming_test": "Check ratelimit_rejects.csv to see if the spike in rejects perfectly aligns with the 14:45 deployment time and if the rejected requests are coming from the checkout service path.",
+      "supporting": [],
+      "contradicting": [],
+      "ruled_out_reason": null
+    },
+    {
+      "id": "H2",
+      "statement": "The checkout service is experiencing connection pool exhaustion due to a dependency failure or misconfiguration.",
+      "service": "checkout",
+      "confidence": 0.25,
+      "status": "open",
+      "disconfirming_test": "Examine checkout.log for connection timeout errors and verify if redis_connections.csv shows saturation at the time of the 504s.",
+      "supporting": [],
+      "contradicting": [],
+      "ruled_out_reason": null
+    },
+    {
+      "id": "H3",
+      "statement": "The orders-db migration (mig-0616) caused latent table locks that are still affecting checkout performance despite the rollback.",
+      "service": "orders-db",
+      "confidence": 0.15,
+      "status": "open",
+      "disconfirming_test": "Check orders_db_latency.csv to see if latency returned to baseline immediately after the 14:58 rollback completion.",
+      "supporting": [],
+      "contradicting": [],
+      "ruled_out_reason": null
+    }
+  ],
+  "tool_calls": [
+    {
+      "step": 1,
+      "name": "get_changes",
+      "args": {},
+      "result_preview": "# changes in 2026-06-16T13:15–15:15Z\ntelemetry/deploys.yaml:48: - {id: mig-0616, ts: 2026-06-16T14:00:00Z, service: orders-db, type: migration, author: dana, status: completed, completed_ts: 2026-06-16T14:12:00Z, summary: \"add index idx_orders_customer on orders(customer_id)\"}..."
+    },
+    {
+      "step": 2,
+      "name": "list_evidence",
+      "args": {},
+      "result_preview": "# Evidence manifest — telemetry + comms sliced to 2026-06-16T13:15–15:15Z; standing docs are timeless\n\n## telemetry\n- telemetry/logs/api-gateway.log (log, 65 lines)  [14:44–15:09Z]\n- telemetry/logs/auth-service.log (log, 56 lines)  [14:47–14:47Z]\n- telemetry/logs/checkout.log ..."
+    },
+    {
+      "step": 3,
+      "name": "read_file",
+      "args": {
+        "path": "telemetry/metrics/ratelimit_rejects.csv"
+      },
+      "result_preview": "# telemetry/metrics/ratelimit_rejects.csv  (window 2026-06-16T13:15–15:15Z; 33/94 lines in window)\n1\ttimestamp,value\n37\t2026-06-16T14:44:00Z,0\n38\t2026-06-16T14:45:00Z,0\n39\t2026-06-16T14:46:00Z,64\n40\t2026-06-16T14:47:00Z,335\n41\t2026-06-16T14:48:00Z,359\n42\t2026-06-16T14:49:00Z,4..."
+    },
+    {
+      "step": 4,
+      "name": "read_file",
+      "args": {
+        "path": "telemetry/logs/rate-limiter.log"
+      },
+      "result_preview": "# telemetry/logs/rate-limiter.log  (window 2026-06-16T13:15–15:15Z; 36/59 lines in window)\n21\tts=2026-06-16T14:40:02Z level=INFO  svc=rate-limiter msg=\"serving\" buckets_active=128 redis_conns=6 max_tokens=100 window_seconds=1\n22\tts=2026-06-16T14:41:11Z level=DEBUG svc=rate-lim..."
+    },
+    {
+      "step": 5,
+      "name": "read_file",
+      "args": {
+        "path": "telemetry/changes/dep-7e2a.diff"
+      },
+      "result_preview": "# telemetry/changes/dep-7e2a.diff\n1\t# dep-7e2a — rate-limiter config change @ 2026-06-16T14:45:00Z (author: sam, team-platform)\n2\t# File: rate-limiter.config.yaml\n3\t--- a/rate-limiter.config.yaml\n4\t+++ b/rate-limiter.config.yaml\n5\t@@ -3,7 +3,7 @@ throttle:\n6\t   window_seconds:..."
+    },
+    {
+      "step": 6,
+      "name": "get_topology",
+      "args": {
+        "service": "rate-limiter"
+      },
+      "result_preview": "# rate-limiter  (topology/services.yaml:69)\ntier: platform  owner: team-platform\ndepends_on (upstream): ['redis']\ndependents (downstream, derived): ['checkout']\nconfig: rate-limiter.config.yaml\ndescription: Token-bucket request throttling for checkout and cart. Stores buckets ..."
+    },
+    {
+      "step": 7,
+      "name": "read_file",
+      "args": {
+        "path": "adr/ADR-014-shared-redis.md"
+      },
+      "result_preview": "# adr/ADR-014-shared-redis.md\n1\t# ADR-014: Share one Redis instance across rate-limiter, checkout, and cart\n2\t\n3\t- **Status:** Accepted\n4\t- **Date:** 2025-09-30\n5\t- **Deciders:** team-platform, team-payments\n6\t- **Tracking:** PLAT-2291 (isolation follow-up, unfunded)\n7\t\n8\t## C..."
+    },
+    {
+      "step": 8,
+      "name": "read_file",
+      "args": {
+        "path": "telemetry/metrics/redis_connections.csv"
+      },
+      "result_preview": "# telemetry/metrics/redis_connections.csv  (window 2026-06-16T13:15–15:15Z; 33/145 lines in window)\n1\ttimestamp,value\n88\t2026-06-16T14:44:00Z,24\n89\t2026-06-16T14:45:00Z,33\n90\t2026-06-16T14:46:00Z,41\n91\t2026-06-16T14:47:00Z,50\n92\t2026-06-16T14:48:00Z,50\n93\t2026-06-16T14:49:00Z,..."
+    }
+  ],
+  "result": {
+    "query": "The checkout service is experiencing 504 errors and high latency.",
+    "outcome": "root_cause",
+    "summary": "The incident was caused by a rate-limiter configuration change that significantly reduced the token bucket size, triggering a spike in Redis connections. This saturated the shared Redis instance, causing connection acquisition timeouts in the checkout service.",
+    "hypotheses": [
+      {
+        "id": "H1",
+        "statement": "The rate-limiter configuration change (dep-7e2a) is incorrectly throttling legitimate checkout traffic by saturating the shared Redis connection pool.",
+        "service": "rate-limiter",
+        "confidence": 0.95,
+        "status": "confirmed",
+        "disconfirming_test": "Check ratelimit_rejects.csv to see if the spike in rejects perfectly aligns with the 14:45 deployment time and if the rejected requests are coming from the checkout service path.",
+        "supporting": [
+          {
+            "claim": "The rate-limiter configuration change reduced max_tokens from 100 to 10.",
+            "snippet": "-  max_tokens: 100",
+            "source": "telemetry/changes/dep-7e2a.diff:8",
+            "verified": true
+          },
+          {
+            "claim": "The rate-limiter configuration change reduced max_tokens from 100 to 10.",
+            "snippet": "+  max_tokens: 10",
+            "source": "telemetry/changes/dep-7e2a.diff:9",
+            "verified": true
+          },
+          {
+            "claim": "The rate-limiter began experiencing connection contention immediately after the config change.",
+            "snippet": "ts=2026-06-16T14:47:40Z level=WARN  svc=rate-limiter msg=\"refill tick delayed: connection acquire contention\" pending_refills=64",
+            "source": "telemetry/logs/rate-limiter.log:45",
+            "verified": true
+          },
+          {
+            "claim": "The shared Redis connection pool reached its maximum capacity of 50 connections.",
+            "snippet": "2026-06-16T14:47:00Z,50",
+            "source": "telemetry/metrics/redis_connections.csv:91",
+            "verified": true
+          }
+        ],
+        "contradicting": [],
+        "ruled_out_reason": null
+      },
+      {
+        "id": "H3",
+        "statement": "The orders-db migration (mig-0616) caused latent table locks that are still affecting checkout performance.",
+        "service": "orders-db",
+        "confidence": 0.05,
+        "status": "ruled_out",
+        "disconfirming_test": "Check orders_db_latency.csv to see if latency returned to baseline immediately after the 14:58 rollback completion.",
+        "supporting": [],
+        "contradicting": [
+          {
+            "claim": "The migration rollback did not resolve the 504 errors.",
+            "snippet": "summary: \"roll back idx_orders_customer — 504s PERSISTED afterward, so the migration was not the cause\"",
+            "source": "telemetry/deploys.yaml:52",
+            "verified": true
+          }
+        ],
+        "ruled_out_reason": "The migration was rolled back at 14:58:00Z, but the 504 errors persisted, indicating it was not the root cause."
+      }
+    ],
+    "open_questions": [
+      "Why was the shared Redis instance not configured with per-service connection limits to prevent noisy neighbor scenarios?",
+      "Did the cart service also experience failures during the period of Redis connection saturation?"
+    ],
+    "recommended_action": "Revert the rate-limiter configuration change (dep-7e2a) to restore the previous max_tokens value of 100.",
+    "stakeholder_note": "We have identified the root cause of the checkout 504 errors as a recent configuration change to the rate-limiter, which caused connection exhaustion in our shared Redis instance. We have high confidence in this finding. The next step is to revert the rate-limiter configuration to restore service stability.",
+    "noise_dropped": []
+  },
+  "grounding": {
+    "claims_total": 5,
+    "claims_verified": 5,
+    "ungrounded": []
+  },
+  "impact": {
+    "ticket_count": 4,
+    "first_seen": "2026-06-16T14:51Z",
+    "services": [
+      "checkout"
+    ],
+    "top_priority": "urgent",
+    "revenue_note": "checkout outages map ~1:1 to lost orders (~$4.2k/min at peak) — see slos.yaml.",
+    "sources": [
+      "telemetry/support-tickets.md:4",
+      "telemetry/support-tickets.md:5",
+      "telemetry/support-tickets.md:6",
+      "telemetry/support-tickets.md:7"
+    ]
+  },
+  "status_check": {
+    "has_draft": true,
+    "draft_source": "telemetry/status-updates.md:14",
+    "draft_excerpt": "We are investigating checkout failures. The likely cause is a database migration performed this afternoon, which we are rolling back. We expect resolution shortly.",
+    "verdict_cause": "rate-limiter",
+    "needs_correction": true,
+    "message": "The public status draft does not reflect the investigation: it reads \"We are investigating checkout failures. The likely cause is a database migration performed this afternoon, which we are rolling back. We expect resolution shortly.\", but the evidence points to rate-limiter. Correct the draft before publishing."
+  }
+}
