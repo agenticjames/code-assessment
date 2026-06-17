@@ -4,6 +4,18 @@ These flow through the phases: ``hypothesize`` emits ``Hypotheses`` (candidates,
 each with a ``disconfirming_test``); the test loop gathers evidence; ``adjudicate`` emits an
 ``InvestigationResult`` (each hypothesis ``confirmed``/``ruled_out`` with supporting AND
 contradicting evidence).
+
+Two tiers of schema live here, and the distinction matters when editing field text:
+
+* **Model-facing** — ``Hypotheses``, ``Hypothesis``, ``EvidenceRef``, ``NoiseItem``,
+  ``InvestigationResult``. The LLM fills these via ``with_structured_output``, so every class
+  docstring and field ``description`` is *prompt surface*: it is fed to the model and shapes the
+  graded output. Treat it like the phase prompts — preserve load-bearing wording and eval-gate any
+  change (``biggy eval`` / the live ``test_orchestrator`` test); on the weak default model small
+  rewordings perturb behaviour.
+* **Code-only** — ``Grounding``, ``CustomerImpact``, ``StatusCheck`` (and ``EvidenceRef.verified``).
+  Computed by the deterministic ``verify`` / ``reconcile`` phases and never emitted by the LLM, so
+  their descriptions are internal documentation only — safe to edit freely.
 """
 
 from __future__ import annotations
@@ -53,8 +65,13 @@ class NoiseItem(BaseModel):
 class Grounding(BaseModel):
     """Result of the deterministic citation verifier (computed by code, not the LLM)."""
 
-    claims_total: int = 0
-    claims_verified: int = 0
+    claims_total: int = Field(
+        default=0, description="Total EvidenceRef citations across the verdict's hypotheses."
+    )
+    claims_verified: int = Field(
+        default=0,
+        description="How many of those citations the verifier re-grounded in their cited source.",
+    )
     ungrounded: list[str] = Field(
         default_factory=list,
         description="Descriptions of citations whose snippet was not found in the cited source.",
@@ -65,7 +82,9 @@ class CustomerImpact(BaseModel):
     """Customer-facing impact, derived deterministically (NOT by the LLM) from in-window support
     tickets — a grounded blast-radius/severity line for the briefing instead of a guess."""
 
-    ticket_count: int = 0
+    ticket_count: int = Field(
+        default=0, description="Number of distinct in-window support tickets counted."
+    )
     first_seen: str | None = Field(
         default=None, description="Earliest in-window ticket timestamp."
     )
@@ -87,15 +106,22 @@ class StatusCheck(BaseModel):
     """Public status page cross-checked against the verdict — the deterministic 'correct the draft'
     callout. Catches a human consensus (a status DRAFT) that the evidence contradicts."""
 
-    has_draft: bool = False
+    has_draft: bool = Field(
+        default=False, description="True if an in-window public status draft was found."
+    )
     draft_source: str | None = Field(
         default=None, description="'<path>:<line>' of the in-window draft."
     )
-    draft_excerpt: str | None = None
+    draft_excerpt: str | None = Field(
+        default=None, description="Short excerpt of the draft being cross-checked."
+    )
     verdict_cause: str | None = Field(
         default=None, description="The confirmed cause the draft is checked against."
     )
-    needs_correction: bool = False
+    needs_correction: bool = Field(
+        default=False,
+        description="True if the draft's stated cause diverges from the verdict.",
+    )
     message: str | None = Field(
         default=None,
         description="Responder-facing correction note when the draft diverges from the evidence.",
